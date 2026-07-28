@@ -59,6 +59,33 @@ jobs:
             echo "version=$(git describe --tags --always --dirty 2>/dev/null || echo dev-$(git rev-parse --short HEAD))" >> $GITHUB_OUTPUT
           fi
 
+      # ── Cache: depends sources (downloaded tarballs) ─────────────
+      - name: Cache depends sources
+        uses: actions/cache@v4
+        with:
+          path: depends/sources
+          key: depends-sources-${{ matrix.host_triplet }}-${{ hashFiles('depends/packages/*') }}
+          restore-keys: |
+            depends-sources-${{ matrix.host_triplet }}-
+
+      # ── Cache: depends built artifacts ───────────────────────────
+      - name: Cache depends built
+        uses: actions/cache@v4
+        with:
+          path: depends/built
+          key: depends-built-${{ matrix.host_triplet }}-${{ hashFiles('depends/packages/*', 'depends/Makefile') }}
+          restore-keys: |
+            depends-built-${{ matrix.host_triplet }}-
+
+      # ── Cache: ccache (compiler cache for source builds) ─────────
+      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.os == 'macOS' && '~/Library/Caches/ccache' || '~/.ccache' }}
+          key: ccache-${{ matrix.target }}-${{ github.sha }}
+          restore-keys: |
+            ccache-${{ matrix.target }}-
+
       # ── macOS Intel ──────────────────────────────────────────────
       - name: Install macOS dependencies
         if: matrix.target == 'macos-intel'
@@ -69,14 +96,17 @@ jobs:
         if: matrix.target == 'macos-intel'
         run: |
           export PATH="$(brew --prefix qt@5)/bin:$PATH"
+          export CCACHE_DIR="$HOME/Library/Caches/ccache"
+          ccache -M 500M 2>/dev/null || true
           cd depends
           make HOST=${{ matrix.host_triplet }} -j$(sysctl -n hw.logicalcpu)
           cd ..
           ./autogen.sh
           CONFIG_SITE="$PWD/depends/${{ matrix.host_triplet }}/share/config.site" \
-            ./configure --prefix=/opt/dashbase --with-gui=yes
+            ./configure --prefix=/opt/dashbase --with-gui=yes CC="ccache clang" CXX="ccache clang++"
           make -j$(sysctl -n hw.logicalcpu)
           make install DESTDIR="$PWD/release"
+          ccache -s 2>/dev/null || true
 
       - name: Package macOS
         if: matrix.target == 'macos-intel'
@@ -106,13 +136,17 @@ jobs:
       - name: Build Windows (depends + configure + make)
         if: matrix.target == 'windows'
         run: |
+          export CCACHE_DIR="$HOME/.ccache"
+          ccache -M 500M 2>/dev/null || true
           cd depends
           make HOST=${{ matrix.host_triplet }} -j$(nproc)
           cd ..
           ./autogen.sh
           CONFIG_SITE="$PWD/depends/${{ matrix.host_triplet }}/share/config.site" \
-            ./configure --prefix=/ --with-gui=yes
+            ./configure --prefix=/ --with-gui=yes \
+              CC="ccache x86_64-w64-mingw32-gcc" CXX="ccache x86_64-w64-mingw32-g++"
           make -j$(nproc)
+          ccache -s 2>/dev/null || true
 
       - name: Package Windows
         if: matrix.target == 'windows'
@@ -144,14 +178,17 @@ jobs:
       - name: Build Linux daemon (depends + configure + make)
         if: matrix.target == 'linux-daemon'
         run: |
+          export CCACHE_DIR="$HOME/.ccache"
+          ccache -M 500M 2>/dev/null || true
           cd depends
           make HOST=${{ matrix.host_triplet }} NO_QT=1 -j$(nproc)
           cd ..
           ./autogen.sh
           CONFIG_SITE="$PWD/depends/${{ matrix.host_triplet }}/share/config.site" \
-            ./configure --prefix=/opt/dashbase --without-gui
+            ./configure --prefix=/opt/dashbase --without-gui CC="ccache gcc" CXX="ccache g++"
           make -j$(nproc)
           make install DESTDIR="$PWD/release"
+          ccache -s 2>/dev/null || true
 
       - name: Package Linux daemon
         if: matrix.target == 'linux-daemon'
