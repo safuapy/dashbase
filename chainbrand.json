@@ -1,0 +1,125 @@
+{
+  "_comment": "Chain brand configuration for Dash Core fork. Edit these values to customize your chain identity. The scripts/new-fork.sh script reads this file and applies all branding/chain parameter changes across the codebase.",
+
+  "chain": {
+    "name": "MyChain",
+    "description": "A rebrandable masternode chain based on Dash Core v18.2.2",
+    "ticker": "MYC",
+    "currency_unit": "MYC",
+    "subunit": "duffs",
+    "subunit_decimals": 8,
+    "client_name": "MyChain Core",
+    "conf_file": "mychain.conf",
+    "data_dir": "MyChainCore",
+    "organization": "MyChain Project",
+    "domain": "mychain.org"
+  },
+
+  "network": {
+    "mainnet": {
+      "magic_bytes": [203, 12, 107, 189],
+      "default_port": 9999,
+      "rpc_port": 9998,
+      "dns_seeds": ["dnsseed.mychain.org"],
+      "fixed_seeds": [],
+      "bip44_coin_type": 5,
+      "base58_prefixes": {
+        "pubkey_address": 76,
+        "script_address": 16,
+        "secret_key": 204,
+        "ext_public_key": [4, 136, 178, 30],
+        "ext_secret_key": [4, 136, 173, 228]
+      },
+      "genesis": {
+        "timestamp": 1390095618,
+        "nonce": 28917698,
+        "bits": 486604768,
+        "version": 1,
+        "reward": 5000000000,
+        "_comment_hash": "Must be recalculated after changing genesis parameters"
+      },
+      "checkpoints": [],
+      "minimum_chain_work": "0x000000000000000000000000000000000000000000007d31aeabf4a72ce1fbaa",
+      "default_assume_valid": "0x000000000000001d531f36005159f19351bd49ca676398a561e55dcccb84eacd"
+    },
+
+    "testnet": {
+      "magic_bytes": [243, 183, 181, 49],
+      "default_port": 19999,
+      "rpc_port": 19998,
+      "dns_seeds": ["testnet-seed.mychain.org"],
+      "fixed_seeds": [],
+      "bip44_coin_type": 1,
+      "base58": {
+        "pubkey_address": 139,
+        "script_address": 19,
+        "secret_key": 239,
+        "ext_public_key": [4, 136, 178, 30],
+        "ext_secret_key": [4, 136, 173, 228]
+      },
+      "genesis": {
+        "timestamp": 1390095618,
+        "nonce": 28917698,
+        "bits": 486604768,
+        "version": 1,
+        "reward": 5000000000,
+        "_comment_hash": "Must be recalculated after changing genesis parameters"
+      },
+      "checkpoints": []
+    },
+
+    "regtest": {
+      "magic_bytes": [220, 231, 132, 244],
+      "default_port": 19994,
+      "rpc_port": 19993,
+      "bip44_coin_type": 1,
+      "base58": {
+        "pubkey_address": 111,
+        "script_address": 196,
+        "secret_key": 239,
+        "ext_public_key": [4, 136, 178, 30],
+        "ext_secret_key": [4, 136, 173, 228]
+      }
+    }
+  },
+
+  "binaries": {
+    "daemon": "mychaind",
+    "qt": "mychain-qt",
+    "cli": "mychain-cli",
+    "tx": "mychain-tx",
+    "wallet": "mychain-wallet",
+    "util": "mychain-util"
+  },
+
+  "build": {
+    "package_name": "mychain-core",
+    "copyright_holder": "MyChain Project",
+    "copyright_year": "2026",
+    "website_url": "https://mychain.org",
+    "source_url": "https://github.com/mychain/mychain-core",
+    "version_major": 18,
+    "version_minor": 2,
+    "version_revision": 2,
+    "version_build": 0,
+    "version_suffix": ""
+  },
+
+  "gui": {
+    "organization_name": "MyChain Project",
+    "organization_domain": "mychain.org",
+    "application_name_mainnet": "MyChain-Qt",
+    "application_name_testnet": "MyChain-Qt-testnet",
+    "application_name_regtest": "MyChain-Qt-regtest"
+  },
+
+  "_instructions": [
+    "1. Edit all values above to customize your chain.",
+    "2. Generate a new genesis block hash by modifying the genesis timestamp/nonce.",
+    "3. Run scripts/new-fork.sh to apply branding across the codebase.",
+    "4. Clear checkpoints and fixed seeds for a fresh chain.",
+    "5. Recalculate minimum_chain_work and default_assume_valid after genesis is set.",
+    "6. Update DNS seeds to point to your own seed nodes.",
+    "7. Choose unique magic_bytes to avoid collision with other chains."
+  ]
+}
