@@ -1,0 +1,197 @@
+name: Build Wallets and Daemon
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Git ref to build (branch/tag/sha)'
+        required: false
+        default: ''
+
+env:
+  MAKEFLAGS: -j$(nproc 2>/dev/null || sysctl -n hw.logicalcpu)
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: macos-intel
+            runner: macos-13
+            host_triplet: x86_64-apple-darwin
+            gui: 'true'
+            artifact_name: dashcore-macos-intel
+            artifact_ext: tar.gz
+
+          - target: windows
+            runner: ubuntu-latest
+            host_triplet: x86_64-w64-mingw32
+            gui: 'true'
+            artifact_name: dashcore-windows
+            artifact_ext: zip
+
+          - target: linux-daemon
+            runner: ubuntu-latest
+            host_triplet: x86_64-pc-linux-gnu
+            gui: 'false'
+            artifact_name: dashcore-linux-daemon
+            artifact_ext: tar.gz
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
+          fetch-depth: 0
+
+      - name: Set version from git
+        id: version
+        run: |
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else
+            echo "version=$(git describe --tags --always --dirty 2>/dev/null || echo dev-$(git rev-parse --short HEAD))" >> $GITHUB_OUTPUT
+          fi
+
+      # ── macOS Intel ──────────────────────────────────────────────
+      - name: Install macOS dependencies
+        if: matrix.target == 'macos-intel'
+        run: |
+          xcode-select --install || true
+          brew install automake libtool pkg-config libnatpmp berkeley-db boost libevent qt@5 miniupnpc zeromq sqlite librsvg ccache python3
+
+      - name: Build macOS (depends + configure + make)
+        if: matrix.target == 'macos-intel'
+        run: |
+          export PATH="$(brew --prefix qt@5)/bin:$PATH"
+          cd depends
+          make HOST=${{ matrix.host_triplet }} -j$(sysctl -n hw.logicalcpu)
+          cd ..
+          ./autogen.sh
+          ./configure --prefix="$PWD/depends/${{ matrix.host_triplet }}" --with-gui=yes
+          make -j$(sysctl -n hw.logicalcpu)
+          make install DESTDIR="$PWD/release"
+
+      - name: Package macOS
+        if: matrix.target == 'macos-intel'
+        run: |
+          STAGING="dashcore-${{ steps.version.outputs.version }}-macos-intel"
+          mkdir -p "$STAGING"
+          cp -R release/usr/local/{bin,lib,share} "$STAGING/" 2>/dev/null || true
+          # Include Qt plugins and dylibs if present
+          if [ -d "depends/${{ matrix.host_triplet }}/plugins" ]; then
+            cp -R depends/${{ matrix.host_triplet }}/plugins "$STAGING/" 2>/dev/null || true
+          fi
+          tar -czf "${{ matrix.artifact_name }}.${{ matrix.artifact_ext }}" "$STAGING"
+
+      # ── Windows (cross-compile from Ubuntu) ──────────────────────
+      - name: Install Windows cross-compile dependencies
+        if: matrix.target == 'windows'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential libtool autotools-dev automake pkg-config \
+            bsdmainutils curl git python3 bison \
+            g++-mingw-w64-x86-64 nsis ccache
+
+      - name: Build Windows (depends + configure + make)
+        if: matrix.target == 'windows'
+        run: |
+          cd depends
+          make HOST=${{ matrix.host_triplet }} -j$(nproc)
+          cd ..
+          ./autogen.sh
+          CONFIG_SITE="$PWD/depends/${{ matrix.host_triplet }}/share/config.site" \
+            ./configure --prefix=/ --with-gui=yes
+          make -j$(nproc)
+
+      - name: Package Windows
+        if: matrix.target == 'windows'
+        run: |
+          STAGING="dashcore-${{ steps.version.outputs.version }}-windows"
+          mkdir -p "$STAGING"
+          make install DESTDIR="$PWD/$STAGING"
+          # Copy Qt DLLs and plugins into the staging dir
+          if [ -d "depends/${{ matrix.host_triplet }}/bin" ]; then
+            cp depends/${{ matrix.host_triplet }}/bin/*.dll "$STAGING/bin/" 2>/dev/null || true
+          fi
+          if [ -d "depends/${{ matrix.host_triplet }}/plugins" ]; then
+            mkdir -p "$STAGING/plugins"
+            cp -R depends/${{ matrix.host_triplet }}/plugins/* "$STAGING/plugins/" 2>/dev/null || true
+          fi
+          cd "$STAGING"
+          zip -r "../${{ matrix.artifact_name }}.${{ matrix.artifact_ext }}" .
+          cd ..
+
+      # ── Linux Daemon (no GUI) ────────────────────────────────────
+      - name: Install Linux build dependencies
+        if: matrix.target == 'linux-daemon'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential libtool autotools-dev automake pkg-config \
+            bsdmainutils curl git python3 bison ccache
+
+      - name: Build Linux daemon (depends + configure + make)
+        if: matrix.target == 'linux-daemon'
+        run: |
+          cd depends
+          make HOST=${{ matrix.host_triplet }} -j$(nproc)
+          cd ..
+          ./autogen.sh
+          ./configure --prefix="$PWD/depends/${{ matrix.host_triplet }}" --without-gui
+          make -j$(nproc)
+          make install DESTDIR="$PWD/release"
+
+      - name: Package Linux daemon
+        if: matrix.target == 'linux-daemon'
+        run: |
+          STAGING="dashcore-${{ steps.version.outputs.version }}-linux-daemon"
+          mkdir -p "$STAGING"
+          cp -R release/usr/local/{bin,lib,share} "$STAGING/" 2>/dev/null || true
+          # Strip binaries
+          strip "$STAGING/bin/"* 2>/dev/null || true
+          tar -czf "${{ matrix.artifact_name }}.${{ matrix.artifact_ext }}" "$STAGING"
+
+      # ── Upload Artifacts ─────────────────────────────────────────
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_name }}.${{ matrix.artifact_ext }}
+          retention-days: 30
+
+  # ── Release: attach artifacts to GitHub Release on tag push ─────
+  release:
+    name: Attach to Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Display structure
+        run: ls -R artifacts
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/**/*.tar.gz
+            artifacts/**/*.zip
+          generate_release_notes: true
+          draft: true
