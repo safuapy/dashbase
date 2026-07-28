@@ -285,7 +285,7 @@ public:
         // Dash BIP44 coin type is '5'
         nExtCoinType = 153;
 
-        vFixedSeeds = std::vector<SeedSpec6>(std::begin(pnSeed6_main), std::end(pnSeed6_main));
+        vFixedSeeds.clear();
 
         // long living quorum params
         AddLLMQ(Consensus::LLMQType::LLMQ_50_60);
@@ -486,7 +486,6 @@ public:
         // assert(genesis.hashMerkleRoot == uint256S("0x..."));
 
         vFixedSeeds.clear();
-        vFixedSeeds = std::vector<SeedSpec6>(std::begin(pnSeed6_test), std::end(pnSeed6_test));
 
         vSeeds.clear();
         // nodes with support for servicebits filtering should be at the top
