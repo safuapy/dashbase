@@ -141,7 +141,7 @@ jobs:
         if: matrix.target == 'linux-daemon'
         run: |
           cd depends
-          make HOST=${{ matrix.host_triplet }} -j$(nproc)
+          make HOST=${{ matrix.host_triplet }} NO_QT=1 -j$(nproc)
           cd ..
           ./autogen.sh
           ./configure --prefix="$PWD/depends/${{ matrix.host_triplet }}" --without-gui
