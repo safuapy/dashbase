@@ -220,7 +220,7 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_REALLOC].nThresholdMin = 2420; // 60% of 4032
         consensus.vDeployments[Consensus::DEPLOYMENT_REALLOC].nFalloffCoeff = 5; // this corresponds to 10 periods
 
-        // Deployment of DIP0020, DIP0021 and LLMQ_100_67 quorums
+        // Deployment of DIP0020 and DIP0021
         consensus.vDeployments[Consensus::DEPLOYMENT_DIP0020].bit = 6;
         consensus.vDeployments[Consensus::DEPLOYMENT_DIP0020].nStartTime = 1625097600; // July 1st, 2021
         consensus.vDeployments[Consensus::DEPLOYMENT_DIP0020].nTimeout = 1656633600; // July 1st, 2022
@@ -291,11 +291,9 @@ public:
         AddLLMQ(Consensus::LLMQType::LLMQ_60_75);
         AddLLMQ(Consensus::LLMQType::LLMQ_400_60);
         AddLLMQ(Consensus::LLMQType::LLMQ_400_85);
-        AddLLMQ(Consensus::LLMQType::LLMQ_100_67);
         consensus.llmqTypeChainLocks = Consensus::LLMQType::LLMQ_400_60;
         consensus.llmqTypeInstantSend = Consensus::LLMQType::LLMQ_50_60;
         consensus.llmqTypeDIP0024InstantSend = Consensus::LLMQType::LLMQ_60_75;
-        consensus.llmqTypePlatform = Consensus::LLMQType::LLMQ_100_67;
         consensus.llmqTypeMnhf = Consensus::LLMQType::LLMQ_400_85;
 
         fDefaultConsistencyChecks = false;
@@ -447,7 +445,7 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_REALLOC].nThresholdMin = 60; // 60% of 100
         consensus.vDeployments[Consensus::DEPLOYMENT_REALLOC].nFalloffCoeff = 5; // this corresponds to 10 periods
 
-        // Deployment of DIP0020, DIP0021 and LLMQ_100_67 quorums
+        // Deployment of DIP0020 and DIP0021
         consensus.vDeployments[Consensus::DEPLOYMENT_DIP0020].bit = 6;
         consensus.vDeployments[Consensus::DEPLOYMENT_DIP0020].nStartTime = 1606780800; // December 1st, 2020
         consensus.vDeployments[Consensus::DEPLOYMENT_DIP0020].nTimeout = 1638316800; // December 1st, 2021
@@ -511,12 +509,9 @@ public:
         AddLLMQ(Consensus::LLMQType::LLMQ_60_75);
         AddLLMQ(Consensus::LLMQType::LLMQ_400_60);
         AddLLMQ(Consensus::LLMQType::LLMQ_400_85);
-        AddLLMQ(Consensus::LLMQType::LLMQ_100_67);
-        AddLLMQ(Consensus::LLMQType::LLMQ_25_67);
         consensus.llmqTypeChainLocks = Consensus::LLMQType::LLMQ_50_60;
         consensus.llmqTypeInstantSend = Consensus::LLMQType::LLMQ_50_60;
         consensus.llmqTypeDIP0024InstantSend = Consensus::LLMQType::LLMQ_60_75;
-        consensus.llmqTypePlatform = Consensus::LLMQType::LLMQ_25_67;
         consensus.llmqTypeMnhf = Consensus::LLMQType::LLMQ_50_60;
 
         fDefaultConsistencyChecks = false;
@@ -648,7 +643,7 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_REALLOC].nThresholdMin = 60; // 60% of 100
         consensus.vDeployments[Consensus::DEPLOYMENT_REALLOC].nFalloffCoeff = 5; // this corresponds to 10 periods
 
-        // Deployment of DIP0020, DIP0021 and LLMQ_100_67 quorums
+        // Deployment of DIP0020 and DIP0021
         consensus.vDeployments[Consensus::DEPLOYMENT_DIP0020].bit = 6;
         consensus.vDeployments[Consensus::DEPLOYMENT_DIP0020].nStartTime = 1604188800; // November 1st, 2020
         consensus.vDeployments[Consensus::DEPLOYMENT_DIP0020].nTimeout = 999999999999ULL;
@@ -712,13 +707,11 @@ public:
         AddLLMQ(Consensus::LLMQType::LLMQ_60_75);
         AddLLMQ(Consensus::LLMQType::LLMQ_400_60);
         AddLLMQ(Consensus::LLMQType::LLMQ_400_85);
-        AddLLMQ(Consensus::LLMQType::LLMQ_100_67);
         AddLLMQ(Consensus::LLMQType::LLMQ_DEVNET);
         AddLLMQ(Consensus::LLMQType::LLMQ_DEVNET_DIP0024);
         consensus.llmqTypeChainLocks = Consensus::LLMQType::LLMQ_50_60;
         consensus.llmqTypeInstantSend = Consensus::LLMQType::LLMQ_50_60;
         consensus.llmqTypeDIP0024InstantSend = Consensus::LLMQType::LLMQ_60_75;
-        consensus.llmqTypePlatform = Consensus::LLMQType::LLMQ_100_67;
         consensus.llmqTypeMnhf = Consensus::LLMQType::LLMQ_50_60;
 
         UpdateDevnetLLMQChainLocksFromArgs(args);
@@ -987,7 +980,6 @@ public:
         consensus.llmqTypeChainLocks = Consensus::LLMQType::LLMQ_TEST;
         consensus.llmqTypeInstantSend = Consensus::LLMQType::LLMQ_TEST_INSTANTSEND;
         consensus.llmqTypeDIP0024InstantSend = Consensus::LLMQType::LLMQ_TEST_DIP0024;
-        consensus.llmqTypePlatform = Consensus::LLMQType::LLMQ_TEST;
         consensus.llmqTypeMnhf = Consensus::LLMQType::LLMQ_TEST;
 
         UpdateLLMQTestParametersFromArgs(args, Consensus::LLMQType::LLMQ_TEST);

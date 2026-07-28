@@ -17,9 +17,7 @@ enum class LLMQType : uint8_t {
     LLMQ_50_60 = 1,  // 50 members, 30 (60%) threshold, one per hour
     LLMQ_400_60 = 2, // 400 members, 240 (60%) threshold, one every 12 hours
     LLMQ_400_85 = 3, // 400 members, 340 (85%) threshold, one every 24 hours
-    LLMQ_100_67 = 4, // 100 members, 67 (67%) threshold, one per hour
     LLMQ_60_75 = 5,  // 60 members, 45 (75%) threshold, one every 12 hours
-    LLMQ_25_67 = 6, // 25 members, 67 (67%) threshold, one per hour
 
     // for testing only
     LLMQ_TEST = 100, // 3 members, 2 (66%) threshold, one per hour. Params might differ when -llmqtestparams is used
@@ -365,60 +363,6 @@ static constexpr std::array<LLMQParams, 12> available_llmqs = {
 
         .keepOldConnections = 5,
         .recoveryMembers = 100,
-    },
-
-    /**
-     * llmq_100_67
-     * This quorum is deployed on mainnet and requires
-     * 80 - 100 participants
-     *
-     * Used by Dash Platform
-     */
-    LLMQParams{
-        .type = LLMQType::LLMQ_100_67,
-        .name = "llmq_100_67",
-        .useRotation = false,
-        .size = 100,
-        .minSize = 80,
-        .threshold = 67,
-
-        .dkgInterval = 24, // one DKG per hour
-        .dkgPhaseBlocks = 2,
-        .dkgMiningWindowStart = 10, // dkgPhaseBlocks * 5 = after finalization
-        .dkgMiningWindowEnd = 18,
-        .dkgBadVotesThreshold = 80,
-
-        .signingActiveQuorumCount = 24, // a full day worth of LLMQs
-
-        .keepOldConnections = 25,
-        .recoveryMembers = 50,
-    },
-
-    /**
-     * llmq_25_67
-     * This quorum is deployed on Testnet and requires
-     * 25 participants
-     *
-     * Used by Dash Platform
-     */
-    LLMQParams{
-        .type = LLMQType::LLMQ_25_67,
-        .name = "llmq_25_67",
-        .useRotation = false,
-        .size = 25,
-        .minSize = 22,
-        .threshold = 17,
-
-        .dkgInterval = 24, // one DKG per hour
-        .dkgPhaseBlocks = 2,
-        .dkgMiningWindowStart = 10, // dkgPhaseBlocks * 5 = after finalization
-        .dkgMiningWindowEnd = 18,
-        .dkgBadVotesThreshold = 22,
-
-        .signingActiveQuorumCount = 24, // a full day worth of LLMQs
-
-        .keepOldConnections = 25,
-        .recoveryMembers = 12,
     },
 
 }; // available_llmqs

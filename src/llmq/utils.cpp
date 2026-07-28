@@ -23,8 +23,6 @@
 
 #include <optional>
 
-static constexpr int TESTNET_LLMQ_25_67_ACTIVATION_HEIGHT = 847000;
-
 namespace llmq
 {
 
@@ -580,7 +578,7 @@ static bool EvalSpork(Consensus::LLMQType llmqType, int64_t spork_value)
     if (spork_value == 0) {
         return true;
     }
-    if (spork_value == 1 && llmqType != Consensus::LLMQType::LLMQ_100_67 && llmqType != Consensus::LLMQType::LLMQ_400_60 && llmqType != Consensus::LLMQType::LLMQ_400_85) {
+    if (spork_value == 1 && llmqType != Consensus::LLMQType::LLMQ_400_60 && llmqType != Consensus::LLMQType::LLMQ_400_85) {
         return true;
     }
     return false;
@@ -637,7 +635,6 @@ bool IsDIP0024Active(const CBlockIndex* pindex)
 bool IsInstantSendLLMQTypeShared()
 {
     if (Params().GetConsensus().llmqTypeInstantSend == Params().GetConsensus().llmqTypeChainLocks ||
-        Params().GetConsensus().llmqTypeInstantSend == Params().GetConsensus().llmqTypePlatform ||
         Params().GetConsensus().llmqTypeInstantSend == Params().GetConsensus().llmqTypeMnhf) {
         return true;
     }
@@ -907,7 +904,6 @@ bool IsQuorumTypeEnabledInternal(Consensus::LLMQType llmqType, const CQuorumMana
         case Consensus::LLMQType::LLMQ_400_60:
         case Consensus::LLMQType::LLMQ_400_85:
             break;
-        case Consensus::LLMQType::LLMQ_100_67:
         case Consensus::LLMQType::LLMQ_TEST_V17:
             if (LOCK(cs_llmq_vbc); VersionBitsState(pindex, consensusParams, Consensus::DEPLOYMENT_DIP0020, llmq_versionbitscache) != ThresholdState::ACTIVE) {
                 return false;
@@ -922,11 +918,6 @@ bool IsQuorumTypeEnabledInternal(Consensus::LLMQType llmqType, const CQuorumMana
             }
             break;
         }
-        case Consensus::LLMQType::LLMQ_25_67:
-            if (pindex->nHeight < TESTNET_LLMQ_25_67_ACTIVATION_HEIGHT) {
-                return false;
-            }
-            break;
         default:
             throw std::runtime_error(strprintf("%s: Unknown LLMQ type %d", __func__, static_cast<uint8_t>(llmqType)));
     }
