@@ -262,7 +262,6 @@ fi
 
 # ── 9. bitcoinunits.cpp — Currency unit ───────────────────────────
 echo "[9/12] Updating currency units..."
-UNITS_FILE="$REROOOT/src/qt/bitcoinunits.cpp"
 UNITS_FILE="$REPO_ROOT/src/qt/bitcoinunits.cpp"
 if [ -f "$UNITS_FILE" ]; then
     replace_in_file "$UNITS_FILE" '"DASH"' "\"$CURRENCY_UNIT\""
