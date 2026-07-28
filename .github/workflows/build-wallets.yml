@@ -97,7 +97,10 @@ jobs:
           sudo apt-get install -y \
             build-essential libtool autotools-dev automake pkg-config \
             bsdmainutils curl git python3 bison \
-            g++-mingw-w64-x86-64 nsis ccache
+            g++-mingw-w64-x86-64-posix nsis ccache
+          # Ensure posix thread model is default (win32 threads conflict with std::mutex)
+          sudo update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix 2>/dev/null || true
+          sudo update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix 2>/dev/null || true
 
       - name: Build Windows (depends + configure + make)
         if: matrix.target == 'windows'
