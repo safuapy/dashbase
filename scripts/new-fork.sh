@@ -278,6 +278,15 @@ find "$REPO_ROOT/src" -name "Makefile.am" -o -name "*.pro" | while read -r f; do
     replace_in_file "$f" "dash-cli" "$BIN_CLI"
     replace_in_file "$f" "dash-tx" "$BIN_TX"
     replace_in_file "$f" "dash-wallet" "$BIN_WALLET"
+    # Also replace underscore variants (automake converts hyphens to underscores in variable names)
+    BIN_CLI_USCORE="${BIN_CLI//-/_}"
+    BIN_TX_USCORE="${BIN_TX//-/_}"
+    BIN_WALLET_USCORE="${BIN_WALLET//-/_}"
+    BIN_QT_USCORE="${BIN_QT//-/_}"
+    replace_in_file "$f" "dash_cli" "$BIN_CLI_USCORE"
+    replace_in_file "$f" "dash_tx" "$BIN_TX_USCORE"
+    replace_in_file "$f" "dash_wallet" "$BIN_WALLET_USCORE"
+    replace_in_file "$f" "dash_qt" "$BIN_QT_USCORE"
 done
 
 # ── 11. init.cpp — URLs and branding ──────────────────────────────
