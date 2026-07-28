@@ -319,8 +319,10 @@ bool CMasternodePayments::IsTransactionValid(const CTransaction& txNew, int nBlo
         bool found = ranges::any_of(txNew.vout, [&txout](const auto& txout2) {return txout == txout2;});
         if (!found) {
             CTxDestination dest;
-            if (!ExtractDestination(txout.scriptPubKey, dest))
-                assert(false);
+            if (!ExtractDestination(txout.scriptPubKey, dest)) {
+                LogPrintf("CMasternodePayments::%s -- ERROR failed to extract destination from masternode payment script at height %s\n", __func__, nBlockHeight);
+                return false;
+            }
             LogPrintf("CMasternodePayments::%s -- ERROR failed to find expected payee %s in block at height %s\n", __func__, EncodeDestination(dest), nBlockHeight);
             return false;
         }

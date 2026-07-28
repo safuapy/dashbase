@@ -227,6 +227,11 @@ void CChainLocksHandler::CheckActiveState()
 
 void CChainLocksHandler::TrySignChainTip()
 {
+    TRY_LOCK(cs_try_sign, locked);
+    if (!locked) {
+        return;
+    }
+
     Cleanup();
 
     if (!fMasternodeMode) {
