@@ -38,7 +38,7 @@ NO_WALLET ?=
 NO_ZMQ ?=
 NO_UPNP ?=
 NO_NATPMP ?=
-FALLBACK_DOWNLOAD_PATH ?= https://archive.org
+FALLBACK_DOWNLOAD_PATH ?=
 
 BUILD = $(shell ./config.guess)
 HOST ?= $(BUILD)
