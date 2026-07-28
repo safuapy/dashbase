@@ -30,14 +30,14 @@ jobs:
             artifact_ext: tar.gz
 
           - target: windows
-            runner: ubuntu-latest
+            runner: ubuntu-22.04
             host_triplet: x86_64-w64-mingw32
             gui: 'true'
             artifact_name: dashcore-windows
             artifact_ext: zip
 
           - target: linux-daemon
-            runner: ubuntu-latest
+            runner: ubuntu-22.04
             host_triplet: x86_64-pc-linux-gnu
             gui: 'false'
             artifact_name: dashcore-linux-daemon
