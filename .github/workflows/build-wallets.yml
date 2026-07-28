@@ -73,7 +73,9 @@ jobs:
           make HOST=${{ matrix.host_triplet }} -j$(sysctl -n hw.logicalcpu)
           cd ..
           ./autogen.sh
-          ./configure --prefix="$PWD/depends/${{ matrix.host_triplet }}" --with-gui=yes
+          ./configure --prefix=/usr/local --with-gui=yes \
+            CPPFLAGS="-I$PWD/depends/${{ matrix.host_triplet }}/include" \
+            LDFLAGS="-L$PWD/depends/${{ matrix.host_triplet }}/lib"
           make -j$(sysctl -n hw.logicalcpu)
           make install DESTDIR="$PWD/release"
 
@@ -144,7 +146,9 @@ jobs:
           make HOST=${{ matrix.host_triplet }} NO_QT=1 -j$(nproc)
           cd ..
           ./autogen.sh
-          ./configure --prefix="$PWD/depends/${{ matrix.host_triplet }}" --without-gui
+          ./configure --prefix=/usr/local --without-gui \
+            CPPFLAGS="-I$PWD/depends/${{ matrix.host_triplet }}/include" \
+            LDFLAGS="-L$PWD/depends/${{ matrix.host_triplet }}/lib"
           make -j$(nproc)
           make install DESTDIR="$PWD/release"
 
