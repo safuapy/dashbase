@@ -14,9 +14,6 @@ on:
         required: false
         default: ''
 
-env:
-  MAKEFLAGS: -j$(nproc 2>/dev/null || sysctl -n hw.logicalcpu)
-
 jobs:
   build:
     name: Build ${{ matrix.target }}
@@ -66,7 +63,6 @@ jobs:
       - name: Install macOS dependencies
         if: matrix.target == 'macos-intel'
         run: |
-          xcode-select --install || true
           brew install automake libtool pkg-config libnatpmp berkeley-db boost libevent qt@5 miniupnpc zeromq sqlite librsvg ccache python3
 
       - name: Build macOS (depends + configure + make)
