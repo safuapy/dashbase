@@ -289,6 +289,23 @@ find "$REPO_ROOT/src" -name "Makefile.am" -o -name "*.pro" | while read -r f; do
     replace_in_file "$f" "dash_qt" "$BIN_QT_USCORE"
 done
 
+# Rename Windows resource files to match new binary names
+if [ -f "$REPO_ROOT/src/dashd-res.rc" ]; then
+    mv "$REPO_ROOT/src/dashd-res.rc" "$REPO_ROOT/src/${BIN_DAEMON}-res.rc"
+fi
+if [ -f "$REPO_ROOT/src/dash-cli-res.rc" ]; then
+    mv "$REPO_ROOT/src/dash-cli-res.rc" "$REPO_ROOT/src/${BIN_CLI}-res.rc"
+fi
+if [ -f "$REPO_ROOT/src/dash-tx-res.rc" ]; then
+    mv "$REPO_ROOT/src/dash-tx-res.rc" "$REPO_ROOT/src/${BIN_TX}-res.rc"
+fi
+if [ -f "$REPO_ROOT/src/dash-wallet-res.rc" ]; then
+    mv "$REPO_ROOT/src/dash-wallet-res.rc" "$REPO_ROOT/src/${BIN_WALLET}-res.rc"
+fi
+if [ -f "$REPO_ROOT/src/qt/res/dash-qt-res.rc" ]; then
+    mv "$REPO_ROOT/src/qt/res/dash-qt-res.rc" "$REPO_ROOT/src/qt/res/${BIN_QT}-res.rc"
+fi
+
 # ── 11. init.cpp — URLs and branding ──────────────────────────────
 echo "[11/12] Updating init.cpp URLs..."
 INIT_FILE="$REPO_ROOT/src/init.cpp"
