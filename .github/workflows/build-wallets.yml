@@ -20,6 +20,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         include:
           - target: macos-intel
@@ -73,7 +74,8 @@ jobs:
           make HOST=${{ matrix.host_triplet }} -j$(sysctl -n hw.logicalcpu)
           cd ..
           ./autogen.sh
-          ./configure --prefix="$PWD/depends/${{ matrix.host_triplet }}" --with-gui=yes
+          CONFIG_SITE="$PWD/depends/${{ matrix.host_triplet }}/share/config.site" \
+            ./configure --prefix=/opt/dashbase --with-gui=yes
           make -j$(sysctl -n hw.logicalcpu)
           make install DESTDIR="$PWD/release"
 
@@ -82,7 +84,7 @@ jobs:
         run: |
           STAGING="dashcore-${{ steps.version.outputs.version }}-macos-intel"
           mkdir -p "$STAGING"
-          cp -R release/$PWD/depends/${{ matrix.host_triplet }}/{bin,lib,share} "$STAGING/" 2>/dev/null || true
+          cp -R release/opt/dashbase/{bin,lib,share} "$STAGING/" 2>/dev/null || true
           # Include Qt plugins and dylibs if present
           if [ -d "depends/${{ matrix.host_triplet }}/plugins" ]; then
             cp -R depends/${{ matrix.host_triplet }}/plugins "$STAGING/" 2>/dev/null || true
@@ -147,7 +149,8 @@ jobs:
           make HOST=${{ matrix.host_triplet }} NO_QT=1 -j$(nproc)
           cd ..
           ./autogen.sh
-          ./configure --prefix="$PWD/depends/${{ matrix.host_triplet }}" --without-gui
+          CONFIG_SITE="$PWD/depends/${{ matrix.host_triplet }}/share/config.site" \
+            ./configure --prefix=/opt/dashbase --without-gui
           make -j$(nproc)
           make install DESTDIR="$PWD/release"
 
@@ -156,7 +159,7 @@ jobs:
         run: |
           STAGING="dashcore-${{ steps.version.outputs.version }}-linux-daemon"
           mkdir -p "$STAGING"
-          cp -R release/$PWD/depends/${{ matrix.host_triplet }}/{bin,lib,share} "$STAGING/" 2>/dev/null || true
+          cp -R release/opt/dashbase/{bin,lib,share} "$STAGING/" 2>/dev/null || true
           # Strip binaries
           strip "$STAGING/bin/"* 2>/dev/null || true
           tar -czf "${{ matrix.artifact_name }}.${{ matrix.artifact_ext }}" "$STAGING"
