@@ -422,7 +422,8 @@ async fn masternode_outputs() -> Result<serde_json::Value, String> {
 }
 
 #[tauri::command]
-async fn masternode_create collateral_tx: String,
+async fn masternode_create(
+    collateral_tx: String,
     collateral_index: i64,
     ip: String,
     payee: String,
