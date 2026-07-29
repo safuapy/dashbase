@@ -149,7 +149,7 @@ jobs:
           sudo update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix 2>/dev/null || true
           sudo update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix 2>/dev/null || true
 
-      - name: Build Windows (depends + configure + make)
+      - name: Build Windows (depends + configure + make + deploy)
         if: matrix.target == 'windows'
         run: |
           export CCACHE_DIR="$HOME/.ccache"
@@ -162,11 +162,22 @@ jobs:
             ./configure --prefix=/ --with-gui=yes \
               CC="ccache x86_64-w64-mingw32-gcc" CXX="ccache x86_64-w64-mingw32-g++"
           make -j$(nproc)
+          # Build NSIS installer
+          make deploy
           ccache -s 2>/dev/null || true
 
       - name: Package Windows
         if: matrix.target == 'windows'
         run: |
+          # Find the NSIS installer produced by make deploy
+          INSTALLER=$(ls *-win64-setup.exe 2>/dev/null | head -1)
+          if [ -n "$INSTALLER" ]; then
+            echo "Found NSIS installer: $INSTALLER"
+            mv "$INSTALLER" "${{ matrix.artifact_name }}-setup.exe" || true
+          else
+            echo "WARNING: No NSIS installer found, falling back to zip"
+          fi
+          # Also create a zip with all binaries for CLI users
           STAGING="dashcore-${{ steps.version.outputs.version }}-windows"
           mkdir -p "$STAGING"
           make install DESTDIR="$PWD/$STAGING"
@@ -222,6 +233,7 @@ jobs:
         with:
           name: ${{ matrix.artifact_name }}
           path: |
+            ${{ matrix.artifact_name }}-setup.exe
             ${{ matrix.artifact_name }}.${{ matrix.artifact_ext }}
             ${{ matrix.artifact_name }}-daemon.tar.gz
             ${{ matrix.artifact_name }}.tar.gz
@@ -252,5 +264,6 @@ jobs:
             artifacts/**/*.dmg
             artifacts/**/*.tar.gz
             artifacts/**/*.zip
+            artifacts/**/*-setup.exe
           generate_release_notes: true
           draft: true
