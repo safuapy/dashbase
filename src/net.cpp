@@ -1253,7 +1253,7 @@ void CConnman::DisconnectNodes()
                 if (!pnode->fOtherSideDisconnected) {
                     if (pnode->nDisconnectLingerTime == 0) {
                         // let's not immediately close the socket but instead wait for at least 100ms so that there is a
-                        // chance to flush all/some pending data. Otherwise the other side might not receive REJECT messages
+                        // chance to flush all/some pending data. Otherwise the other side might not receive pending messages
                         // that were pushed right before setting fDisconnect=true
                         // Flushing must happen in two places to ensure data can be received by the other side:
                         //   1. vSendMsg must be empty and all messages sent via send(). This is ensured by SocketHandler()
