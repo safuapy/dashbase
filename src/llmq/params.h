@@ -163,7 +163,7 @@ static constexpr std::array<LLMQParams, 12> available_llmqs = {
     },
 
     /**
-     * llmq_test (Dash Core 0.17) aka llmq_test_v17
+     * llmq_test (Dashbase Core 0.17) aka llmq_test_v17
      * This quorum is only used for testing
      *
      */

@@ -47,7 +47,7 @@ QString BitcoinUnits::name(int unit)
         {
             case DASH: return QString("DSB");
             case mDASH: return QString("mDSB");
-            case uDASH: return QString::fromUtf8("μDASH");
+            case uDASH: return QString::fromUtf8("μDSB");
             case duffs: return QString("duffs");
             default: return QString("???");
         }

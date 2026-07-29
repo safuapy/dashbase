@@ -883,8 +883,8 @@ fs::path static GetAutostartFilePath()
 {
     std::string chain = gArgs.GetChainName();
     if (chain == CBaseChainParams::MAIN)
-        return GetAutostartDir() / "dashcore.desktop";
-    return GetAutostartDir() / strprintf("dashcore-%s.desktop", chain);
+        return GetAutostartDir() / "dashbase.desktop";
+    return GetAutostartDir() / strprintf("dashbase-%s.desktop", chain);
 }
 
 bool GetStartOnSystemStartup()

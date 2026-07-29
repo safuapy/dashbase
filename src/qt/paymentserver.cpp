@@ -48,7 +48,7 @@ const QString BITCOIN_IPC_PREFIX("dashbase:");
 //
 static QString ipcServerName()
 {
-    QString name("DashQt");
+    QString name("DashbaseQt");
 
     // Append a simple hash of the datadir
     // Note that GetDataDir(true) returns a different path

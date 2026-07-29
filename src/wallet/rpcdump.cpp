@@ -938,7 +938,7 @@ UniValue dumpwallet(const JSONRPCRequest& request)
     std::sort(vKeyBirth.begin(), vKeyBirth.end());
 
     // produce output
-    file << strprintf("# Wallet dump created by Dash Core %s\n", CLIENT_BUILD);
+    file << strprintf("# Wallet dump created by Dashbase Core %s\n", CLIENT_BUILD);
     file << strprintf("# * Created on %s\n", FormatISO8601DateTime(GetTime()));
     const std::optional<int> tip_height = pwallet->chain().getHeight();
     file << strprintf("# * Best block at time of backup was %i (%s),\n", tip_height.value_or(-1), tip_height ? pwallet->chain().getBlockHash(*tip_height).ToString() : "(missing block hash)");
@@ -946,7 +946,7 @@ UniValue dumpwallet(const JSONRPCRequest& request)
     file << "\n";
 
     UniValue obj(UniValue::VOBJ);
-    obj.pushKV("dashcoreversion", CLIENT_BUILD);
+    obj.pushKV("dashbaseversion", CLIENT_BUILD);
     obj.pushKV("lastblockheight", tip_height.value_or(-1));
     obj.pushKV("lastblockhash", tip_height ? pwallet->chain().getBlockHash(*tip_height).ToString() : NullUniValue);
     obj.pushKV("lastblocktime", tip_height ? FormatISO8601DateTime(pwallet->chain().getBlockTime(*tip_height)) : NullUniValue);
