@@ -72,7 +72,7 @@ bool IsOldBudgetBlockValueValid(const CBlock& block, int nBlockHeight, CAmount b
 *   Determine if coinbase outgoing created money is the correct value
 *
 *   Why is this needed?
-*   - In Dash some blocks are superblocks, which output much higher amounts of coins
+*   - In Dashbase some blocks are superblocks, which output much higher amounts of coins
 *   - Other blocks are 10% lower in outgoing value, so in total, no extra coins are created
 *   - When non-superblocks are detected, the normal schedule should be maintained
 */
@@ -263,10 +263,13 @@ bool CMasternodePayments::GetMasternodeTxOuts(int nBlockHeight, CAmount blockRew
     }
 
     for (const auto& txout : voutMasternodePaymentsRet) {
-        CTxDestination dest;
-        ExtractDestination(txout.scriptPubKey, dest);
-
-        LogPrintf("CMasternodePayments::%s -- Masternode payment %lld to %s\n", __func__, txout.nValue, EncodeDestination(dest));
+        std::string str_payout;
+        if (CTxDestination dest; ExtractDestination(txout.scriptPubKey, dest)) {
+            str_payout = EncodeDestination(dest);
+        } else {
+            str_payout = HexStr(txout.scriptPubKey);
+        }
+        LogPrintf("CMasternodePayments::%s -- Masternode payment %lld to %s\n", __func__, txout.nValue, str_payout);
     }
 
     return true;
@@ -318,12 +321,14 @@ bool CMasternodePayments::IsTransactionValid(const CTransaction& txNew, int nBlo
     for (const auto& txout : voutMasternodePayments) {
         bool found = ranges::any_of(txNew.vout, [&txout](const auto& txout2) {return txout == txout2;});
         if (!found) {
-            CTxDestination dest;
-            if (!ExtractDestination(txout.scriptPubKey, dest)) {
-                LogPrintf("CMasternodePayments::%s -- ERROR failed to extract destination from masternode payment script at height %s\n", __func__, nBlockHeight);
-                return false;
+            std::string str_payout;
+            if (CTxDestination dest; ExtractDestination(txout.scriptPubKey, dest)) {
+                str_payout = EncodeDestination(dest);
+            } else {
+                str_payout = HexStr(txout.scriptPubKey);
             }
-            LogPrintf("CMasternodePayments::%s -- ERROR failed to find expected payee %s in block at height %s\n", __func__, EncodeDestination(dest), nBlockHeight);
+            LogPrintf("CMasternodePayments::%s -- ERROR failed to find expected payee %s in block at height %s\n",
+                      __func__, str_payout, nBlockHeight);
             return false;
         }
     }

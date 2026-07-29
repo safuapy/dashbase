@@ -74,7 +74,7 @@ namespace BCLog {
                     | LLMQ_SIGS | MNPAYMENTS | MNSYNC | COINJOIN | SPORK | NETCONN,
 
         NET_NETCONN = NET | NETCONN, // use this to have something logged in NET and NETCONN as well
-        //End Dash
+        //End Dashbase
 
         ALL         = ~(uint64_t)0,
     };

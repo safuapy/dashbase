@@ -37,7 +37,7 @@ static const int TOOLTIP_WRAP_THRESHOLD = 80;
 /* Number of frames in spinner animation */
 #define SPINNER_FRAMES 90
 
-#define QAPP_ORG_NAME "Dash"
+#define QAPP_ORG_NAME "Dashbase"
 #define QAPP_ORG_DOMAIN "dashbase.org"
 #define QAPP_APP_NAME_DEFAULT "Dashbase-Qt"
 #define QAPP_APP_NAME_TESTNET "Dashbase-Qt-testnet"

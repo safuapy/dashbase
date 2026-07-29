@@ -6,7 +6,7 @@
 #define BITCOIN_CHAINPARAMSSEEDS_H
 
 /**
- * List of fixed seed nodes for the Dash network.
+ * List of fixed seed nodes for the Dashbase network.
  * This file is generated and updated by the seeds script.
  * Clear this list for a new fork chain and populate with your own seed nodes.
  */

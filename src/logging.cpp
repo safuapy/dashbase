@@ -176,8 +176,8 @@ const CLogCategoryDesc LogCategories[] =
     {BCLog::COINJOIN, "coinjoin"},
     {BCLog::SPORK, "spork"},
     {BCLog::NETCONN, "netconn"},
-    {BCLog::DASH, "dash"},
-    //End Dash
+    {BCLog::DASH, "dashbase"},
+    //End Dashbase
 };
 
 bool GetLogCategory(BCLog::LogFlags& flag, const std::string& str)
@@ -298,7 +298,7 @@ void BCLog::Logger::LogPrintStr(const std::string& str)
     std::string str_prefixed = LogEscapeMessage(str);
 
     if (m_log_threadnames && m_started_new_line) {
-        // 16 chars total, "dash-" is 5 of them and another 1 is a NUL terminator
+        // 16 chars total, "dashbase-" is 9 of them and another 1 is a NUL terminator
         str_prefixed.insert(0, "[" + strprintf("%10s", util::ThreadGetInternalName()) + "] ");
     }
 

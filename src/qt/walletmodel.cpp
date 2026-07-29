@@ -194,7 +194,7 @@ WalletModel::SendCoinsReturn WalletModel::prepareTransaction(WalletModelTransact
     {
         if (rcp.fSubtractFeeFromAmount)
             fSubtractFeeFromAmount = true;
-        {   // User-entered dash address / amount:
+        {   // User-entered dashbase address / amount:
             if(!validateAddress(rcp.address))
             {
                 return InvalidAddress;
