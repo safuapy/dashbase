@@ -262,15 +262,14 @@ static std::string GetRequiredPaymentsString(int nBlockHeight, const CDeterminis
     std::string strPayments = "Unknown";
     if (payee) {
         CTxDestination dest;
-        if (!ExtractDestination(payee->pdmnState->scriptPayout, dest)) {
-            CHECK_NONFATAL(false);
+        if (ExtractDestination(payee->pdmnState->scriptPayout, dest)) {
+            strPayments = EncodeDestination(dest);
         }
-        strPayments = EncodeDestination(dest);
         if (payee->nOperatorReward != 0 && payee->pdmnState->scriptOperatorPayout != CScript()) {
-            if (!ExtractDestination(payee->pdmnState->scriptOperatorPayout, dest)) {
-                CHECK_NONFATAL(false);
+            CTxDestination opDest;
+            if (ExtractDestination(payee->pdmnState->scriptOperatorPayout, opDest)) {
+                strPayments += ", " + EncodeDestination(opDest);
             }
-            strPayments += ", " + EncodeDestination(dest);
         }
     }
     if (CSuperblockManager::IsSuperblockTriggered(*governance, nBlockHeight)) {
@@ -281,14 +280,19 @@ static std::string GetRequiredPaymentsString(int nBlockHeight, const CDeterminis
         std::string strSBPayees = "Unknown";
         for (const auto& txout : voutSuperblock) {
             CTxDestination dest;
-            ExtractDestination(txout.scriptPubKey, dest);
-            if (strSBPayees != "Unknown") {
-                strSBPayees += ", " + EncodeDestination(dest);
-            } else {
-                strSBPayees = EncodeDestination(dest);
+            if (ExtractDestination(txout.scriptPubKey, dest)) {
+                if (strSBPayees != "Unknown") {
+                    strSBPayees += ", " + EncodeDestination(dest);
+                } else {
+                    strSBPayees = EncodeDestination(dest);
+                }
             }
         }
-        strPayments += ", " + strSBPayees;
+        if (strPayments != "Unknown") {
+            strPayments += ", " + strSBPayees;
+        } else {
+            strPayments = strSBPayees;
+        }
     }
     return strPayments;
 }
