@@ -57,8 +57,7 @@ endef
 define $(package)_preprocess_cmds
   sed -i.old "s|GIT_REPOSITORY https://github.com/Chia-Network/relic.git|URL \"../../relic-$($(package)_relic_version).tar.gz\"|" CMakeLists.txt && \
   sed -i.old "s|RELIC_GIT_TAG \".*\"|RELIC_GIT_TAG \"\"|" CMakeLists.txt && \
-  sed -i.old '1i\
-#include <memory>' src/threshold.cpp
+  perl -i -pe 'print "#include <memory>\n" if $$. == 1' src/threshold.cpp
 endef
 
 define $(package)_config_cmds
