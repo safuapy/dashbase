@@ -258,11 +258,10 @@ public:
         m_assumed_blockchain_size = 45;
         m_assumed_chain_state_size = 1;
 
-        genesis = CreateGenesisBlock(1753734000, 0, 0x1e0ffff0, 1, 50 * COIN);
+        genesis = CreateGenesisBlock(1753734000, 1410191, 0x1e0ffff0, 1, 50 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
-        // TODO: Update genesis hash assertions after genesis generation
-        // assert(consensus.hashGenesisBlock == uint256S("0x..."));
-        // assert(genesis.hashMerkleRoot == uint256S("0x..."));
+        assert(consensus.hashGenesisBlock == uint256S("0x0000061bc03b44b50f968d9eb0556eb36c4078474b11759768faeff24ae16099"));
+        assert(genesis.hashMerkleRoot == uint256S("0xf40f12dfb8f4bfe0d84147197b741c89e798a2d7993bd7b3d2063ba54915c100"));
 
         // Note that of those which support the service bits prefix, most only support a subset of
         // possible options.
@@ -450,11 +449,10 @@ public:
         m_assumed_blockchain_size = 4;
         m_assumed_chain_state_size = 1;
 
-        genesis = CreateGenesisBlock(1753734000, 0, 0x1e0ffff0, 1, 50 * COIN);
+        genesis = CreateGenesisBlock(1753734001, 313642, 0x1e0ffff0, 1, 50 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
-        // TODO: Update genesis hash assertions after genesis generation
-        // assert(consensus.hashGenesisBlock == uint256S("0x..."));
-        // assert(genesis.hashMerkleRoot == uint256S("0x..."));
+        assert(consensus.hashGenesisBlock == uint256S("0x00000e697bf284734d85d7301c43b5d95e2fb1e4249fb40ccd312f2b663fac80"));
+        assert(genesis.hashMerkleRoot == uint256S("0xf40f12dfb8f4bfe0d84147197b741c89e798a2d7993bd7b3d2063ba54915c100"));
 
         vFixedSeeds.clear();
 
