@@ -27,6 +27,8 @@ BOOST_AUTO_TEST_CASE(fastrandom_tests)
     for (int i = 10; i > 0; --i) {
         BOOST_CHECK_EQUAL(GetRand(std::numeric_limits<uint64_t>::max()), uint64_t{10393729187455219830U});
         BOOST_CHECK_EQUAL(GetRandInt(std::numeric_limits<int>::max()), int{769702006});
+        BOOST_CHECK_EQUAL(GetRandMicros(std::chrono::hours{1}).count(), 2917185654);
+        BOOST_CHECK_EQUAL(GetRandMillis(std::chrono::hours{1}).count(), 2144374);
     }
     BOOST_CHECK_EQUAL(ctx1.rand32(), ctx2.rand32());
     BOOST_CHECK_EQUAL(ctx1.rand32(), ctx2.rand32());
@@ -46,6 +48,8 @@ BOOST_AUTO_TEST_CASE(fastrandom_tests)
     for (int i = 10; i > 0; --i) {
         BOOST_CHECK(GetRand(std::numeric_limits<uint64_t>::max()) != uint64_t{10393729187455219830U});
         BOOST_CHECK(GetRandInt(std::numeric_limits<int>::max()) != int{769702006});
+        BOOST_CHECK(GetRandMicros(std::chrono::hours{1}) != std::chrono::microseconds{2917185654});
+        BOOST_CHECK(GetRandMillis(std::chrono::hours{1}) != std::chrono::milliseconds{2144374});
     }
 
     {

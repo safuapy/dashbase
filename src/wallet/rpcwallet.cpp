@@ -1899,61 +1899,75 @@ static UniValue walletpassphrase(const JSONRPCRequest& request)
     if (!wallet) return NullUniValue;
     CWallet* const pwallet = wallet.get();
 
-    LOCK(pwallet->cs_wallet);
+    int64_t nSleepTime;
+    int64_t relock_time;
+    // Prevent concurrent calls to walletpassphrase with the same wallet.
+    LOCK(pwallet->m_unlock_mutex);
+    {
+        LOCK(pwallet->cs_wallet);
 
-    if (!pwallet->IsCrypted()) {
-        throw JSONRPCError(RPC_WALLET_WRONG_ENC_STATE, "Error: running with an unencrypted wallet, but walletpassphrase was called.");
+        if (!pwallet->IsCrypted()) {
+            throw JSONRPCError(RPC_WALLET_WRONG_ENC_STATE, "Error: running with an unencrypted wallet, but walletpassphrase was called.");
+        }
+
+        // Note that the walletpassphrase is stored in request.params[0] which is not mlock()ed
+        SecureString strWalletPass;
+        strWalletPass.reserve(100);
+        // TODO: get rid of this .c_str() by implementing SecureString::operator=(std::string)
+        // Alternately, find a way to make request.params[0] mlock()'d to begin with.
+        strWalletPass = request.params[0].get_str().c_str();
+
+        // Get the timeout
+        nSleepTime = request.params[1].get_int64();
+        // Timeout cannot be negative, otherwise it will relock immediately
+        if (nSleepTime < 0) {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Timeout cannot be negative.");
+        }
+        // Clamp timeout
+        constexpr int64_t MAX_SLEEP_TIME = 100000000; // larger values trigger a macos/libevent bug?
+        if (nSleepTime > MAX_SLEEP_TIME) {
+            nSleepTime = MAX_SLEEP_TIME;
+        }
+
+        bool fForMixingOnly = false;
+        if (!request.params[2].isNull())
+            fForMixingOnly = request.params[2].get_bool();
+
+        if (fForMixingOnly && !pwallet->IsLocked()) {
+            // Downgrading from "fuly unlocked" mode to "mixing only" one is not supported.
+            // Updating unlock time when current unlock mode is not changed or when it is upgraded
+            // from "mixing only" to "fuly unlocked" is ok.
+            throw JSONRPCError(RPC_WALLET_ALREADY_UNLOCKED, "Error: Wallet is already fully unlocked.");
+        }
+
+        if (strWalletPass.empty()) {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "passphrase can not be empty");
+        }
+
+        if (!pwallet->Unlock(strWalletPass, fForMixingOnly)) {
+            throw JSONRPCError(RPC_WALLET_PASSPHRASE_INCORRECT, "Error: The wallet passphrase entered was incorrect.");
+        }
+
+        pwallet->TopUpKeyPool();
+
+        pwallet->nRelockTime = GetTime() + nSleepTime;
+        relock_time = pwallet->nRelockTime;
     }
-
-    // Note that the walletpassphrase is stored in request.params[0] which is not mlock()ed
-    SecureString strWalletPass;
-    strWalletPass.reserve(100);
-    // TODO: get rid of this .c_str() by implementing SecureString::operator=(std::string)
-    // Alternately, find a way to make request.params[0] mlock()'d to begin with.
-    strWalletPass = request.params[0].get_str().c_str();
-
-    // Get the timeout
-    int64_t nSleepTime = request.params[1].get_int64();
-    // Timeout cannot be negative, otherwise it will relock immediately
-    if (nSleepTime < 0) {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Timeout cannot be negative.");
-    }
-    // Clamp timeout
-    constexpr int64_t MAX_SLEEP_TIME = 100000000; // larger values trigger a macos/libevent bug?
-    if (nSleepTime > MAX_SLEEP_TIME) {
-        nSleepTime = MAX_SLEEP_TIME;
-    }
-
-    bool fForMixingOnly = false;
-    if (!request.params[2].isNull())
-        fForMixingOnly = request.params[2].get_bool();
-
-    if (fForMixingOnly && !pwallet->IsLocked()) {
-        // Downgrading from "fuly unlocked" mode to "mixing only" one is not supported.
-        // Updating unlock time when current unlock mode is not changed or when it is upgraded
-        // from "mixing only" to "fuly unlocked" is ok.
-        throw JSONRPCError(RPC_WALLET_ALREADY_UNLOCKED, "Error: Wallet is already fully unlocked.");
-    }
-
-    if (strWalletPass.empty()) {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "passphrase can not be empty");
-    }
-
-    if (!pwallet->Unlock(strWalletPass, fForMixingOnly)) {
-        throw JSONRPCError(RPC_WALLET_PASSPHRASE_INCORRECT, "Error: The wallet passphrase entered was incorrect.");
-    }
-
-    pwallet->TopUpKeyPool();
-
-    pwallet->nRelockTime = GetTime() + nSleepTime;
-
-    // Keep a weak pointer to the wallet so that it is possible to unload the
+    // rpcRunLater must be called without cs_wallet held otherwise a deadlock
+    // can occur. The deadlock would happen when RPCRunLater removes the
+    // scheduled callback, which takes a lock on the RPC scheduler, while
+    // the RPC scheduler might already be holding a lock and trying to acquire
+    // cs_wallet.
+    //
+    // We also maintain a weak pointer to the wallet so that it is possible to unload the
     // wallet before the following callback is called. If a valid shared pointer
     // is acquired in the callback then the wallet is still loaded.
     std::weak_ptr<CWallet> weak_wallet = wallet;
-    pwallet->chain().rpcRunLater(strprintf("lockwallet(%s)", pwallet->GetName()), [weak_wallet] {
+    pwallet->chain().rpcRunLater(strprintf("lockwallet(%s)", pwallet->GetName()), [weak_wallet, relock_time] {
         if (auto shared_wallet = weak_wallet.lock()) {
             LOCK(shared_wallet->cs_wallet);
+            // Skip if this is not the most recent rpcRunLater callback.
+            if (shared_wallet->nRelockTime != relock_time) return;
             shared_wallet->Lock();
             shared_wallet->nRelockTime = 0;
         }
