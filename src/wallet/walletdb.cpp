@@ -424,7 +424,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
         } else if (strType == DBKeys::HDCHAIN) {
             CHDChain chain;
             ssValue >> chain;
-            if (!pwallet->GetLegacyScriptPubKeyMan()->SetHDChainSingle(chain, true))
+            if (!pwallet->GetLegacyScriptPubKeyMan()->SetHDChainSingle(chain, true, true))
             {
                 strErr = "Error reading wallet database: SetHDChain failed";
                 return false;
@@ -432,7 +432,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
         } else if (strType == DBKeys::CRYPTED_HDCHAIN) {
             CHDChain chain;
             ssValue >> chain;
-            if (!pwallet->GetLegacyScriptPubKeyMan()->SetCryptedHDChainSingle(chain, true))
+            if (!pwallet->GetLegacyScriptPubKeyMan()->SetCryptedHDChainSingle(chain, true, true))
             {
                 strErr = "Error reading wallet database: SetHDCryptedChain failed";
                 return false;
@@ -618,6 +618,15 @@ DBErrors WalletBatch::LoadWallet(CWallet* pwallet)
     // Rewrite encrypted wallets of versions 0.4.0 and 0.5.0rc:
     if (wss.fIsEncrypted && (last_client == 40000 || last_client == 50000))
         return DBErrors::NEED_REWRITE;
+
+    // Validate HD chain encryption consistency after all records are loaded
+    if (auto spk_man = pwallet->GetLegacyScriptPubKeyMan()) {
+        CHDChain hdChain;
+        if (spk_man->GetHDChain(hdChain) && hdChain.IsCrypted() != pwallet->IsCrypted()) {
+            pwallet->WalletLogPrintf("Error: HD chain encryption state inconsistent with wallet encryption state\n");
+            return DBErrors::CORRUPT;
+        }
+    }
 
     if (last_client < CLIENT_VERSION) // Update
         m_batch->Write(DBKeys::VERSION, CLIENT_VERSION);

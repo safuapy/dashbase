@@ -460,11 +460,11 @@ bool LegacyScriptPubKeyMan::GenerateNewHDChainEncrypted(const SecureString& secu
     return false;
 }
 
-bool LegacyScriptPubKeyMan::SetHDChain(WalletBatch &batch, const CHDChain& chain, bool memonly)
+bool LegacyScriptPubKeyMan::SetHDChain(WalletBatch &batch, const CHDChain& chain, bool memonly, bool skip_encryption_check)
 {
     LOCK(cs_wallet);
 
-    if (!SetHDChain(chain))
+    if (!SetHDChain(chain, skip_encryption_check))
         return false;
 
     if (!memonly) {
@@ -478,11 +478,11 @@ bool LegacyScriptPubKeyMan::SetHDChain(WalletBatch &batch, const CHDChain& chain
     return true;
 }
 
-bool LegacyScriptPubKeyMan::SetCryptedHDChain(WalletBatch &batch, const CHDChain& chain, bool memonly)
+bool LegacyScriptPubKeyMan::SetCryptedHDChain(WalletBatch &batch, const CHDChain& chain, bool memonly, bool skip_encryption_check)
 {
     LOCK(cs_wallet);
 
-    if (!SetCryptedHDChain(chain))
+    if (!SetCryptedHDChain(chain, skip_encryption_check))
         return false;
 
     if (!memonly) {
@@ -499,16 +499,16 @@ bool LegacyScriptPubKeyMan::SetCryptedHDChain(WalletBatch &batch, const CHDChain
     return true;
 }
 
-bool LegacyScriptPubKeyMan::SetHDChainSingle(const CHDChain& chain, bool memonly)
+bool LegacyScriptPubKeyMan::SetHDChainSingle(const CHDChain& chain, bool memonly, bool skip_encryption_check)
 {
     WalletBatch batch(m_storage.GetDatabase());
-    return SetHDChain(batch, chain, memonly);
+    return SetHDChain(batch, chain, memonly, skip_encryption_check);
 }
 
-bool LegacyScriptPubKeyMan::SetCryptedHDChainSingle(const CHDChain& chain, bool memonly)
+bool LegacyScriptPubKeyMan::SetCryptedHDChainSingle(const CHDChain& chain, bool memonly, bool skip_encryption_check)
 {
     WalletBatch batch(m_storage.GetDatabase());
-    return SetCryptedHDChain(batch, chain, memonly);
+    return SetCryptedHDChain(batch, chain, memonly, skip_encryption_check);
 }
 
 bool LegacyScriptPubKeyMan::GetDecryptedHDChain(CHDChain& hdChainRet)
@@ -1048,27 +1048,31 @@ bool LegacyScriptPubKeyMan::AddWatchOnly(const CScript& dest, int64_t nCreateTim
     return AddWatchOnly(dest);
 }
 
-bool LegacyScriptPubKeyMan::SetHDChain(const CHDChain& chain)
+bool LegacyScriptPubKeyMan::SetHDChain(const CHDChain& chain, bool skip_encryption_check)
 {
     LOCK(cs_KeyStore);
-    if (IsCrypted())
-        return false;
+    if (!skip_encryption_check) {
+        if (IsCrypted())
+            return false;
 
-    if (chain.IsCrypted())
-        return false;
+        if (chain.IsCrypted())
+            return false;
+    }
 
     hdChain = chain;
     return true;
 }
 
-bool LegacyScriptPubKeyMan::SetCryptedHDChain(const CHDChain& chain)
+bool LegacyScriptPubKeyMan::SetCryptedHDChain(const CHDChain& chain, bool skip_encryption_check)
 {
     LOCK(cs_KeyStore);
-    if (!SetCrypted())
-        return false;
+    if (!skip_encryption_check) {
+        if (!SetCrypted())
+            return false;
 
-    if (!chain.IsCrypted())
-        return false;
+        if (!chain.IsCrypted())
+            return false;
+    }
 
     cryptedHDChain = chain;
     return true;

@@ -322,14 +322,14 @@ public:
     CPubKey GenerateNewKey(WalletBatch& batch, uint32_t nAccountIndex, bool fInternal /*= false*/) EXCLUSIVE_LOCKS_REQUIRED(cs_wallet);
 
     /* Set the HD chain model (chain child index counters) */
-    bool SetHDChain(WalletBatch &batch, const CHDChain& chain, bool memonly);
-    bool SetCryptedHDChain(WalletBatch &batch, const CHDChain& chain, bool memonly);
+    bool SetHDChain(WalletBatch &batch, const CHDChain& chain, bool memonly, bool skip_encryption_check = false);
+    bool SetCryptedHDChain(WalletBatch &batch, const CHDChain& chain, bool memonly, bool skip_encryption_check = false);
     /**
      * Set the HD chain model (chain child index counters) using temporary wallet db object
      * which causes db flush every time these methods are used
      */
-    bool SetHDChainSingle(const CHDChain& chain, bool memonly);
-    bool SetCryptedHDChainSingle(const CHDChain& chain, bool memonly);
+    bool SetHDChainSingle(const CHDChain& chain, bool memonly, bool skip_encryption_check = false);
+    bool SetCryptedHDChainSingle(const CHDChain& chain, bool memonly, bool skip_encryption_check = false);
 
     //! Adds a watch-only address to the store, without saving it to disk (used by LoadWallet)
     bool LoadWatchOnly(const CScript &dest);
@@ -386,9 +386,9 @@ public:
 
     bool EncryptHDChain(const CKeyingMaterial& vMasterKeyIn, const CHDChain& chain = CHDChain());
     bool DecryptHDChain(CHDChain& hdChainRet) const;
-    bool SetHDChain(const CHDChain& chain);
+    bool SetHDChain(const CHDChain& chain, bool skip_encryption_check = false);
     bool GetHDChain(CHDChain& hdChainRet) const;
-    bool SetCryptedHDChain(const CHDChain& chain);
+    bool SetCryptedHDChain(const CHDChain& chain, bool skip_encryption_check = false);
     bool GetDecryptedHDChain(CHDChain& hdChainRet);
 
     /* Generates a new HD chain */
