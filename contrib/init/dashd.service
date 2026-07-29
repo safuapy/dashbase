@@ -1,48 +1,48 @@
 # It is not recommended to modify this file in-place, because it will
 # be overwritten during package upgrades. If you want to add further
 # options or overwrite existing ones then use
-# $ systemctl edit dashd.service
+# $ systemctl edit dashbased.service
 # See "man systemd.service" for details.
 
 # Note that almost all daemon options could be specified in
-# /etc/dash/dash.conf, except for those explicitly specified as arguments
+# /etc/dashbase/dashbase.conf, except for those explicitly specified as arguments
 # in ExecStart=
 
 [Unit]
-Description=Dash daemon
+Description=Dashbase daemon
 After=network.target
 
 [Service]
-ExecStart=/usr/bin/dashd -daemon \
-                                                            -pid=/run/dashd/dashd.pid \
-                                                            -conf=/etc/dash/dash.conf  \
-                                                            -datadir=/var/lib/dashd
+ExecStart=/usr/bin/dashbased -daemon \
+                                                            -pid=/run/dashbased/dashbased.pid \
+                                                            -conf=/etc/dashbase/dashbase.conf  \
+                                                            -datadir=/var/lib/dashbased
 
 # Process management
 ####################
 
 Type=forking
-PIDFile=/run/dashd/dashd.pid
+PIDFile=/run/dashbased/dashbased.pid
 Restart=on-failure
 TimeoutStopSec=600
 
 # Directory creation and permissions
 ####################################
 
-# Run as dash:dash
-User=dashcore
-Group=dashcore
+# Run as dashbase:dashbase
+User=dashbase
+Group=dashbase
 
-# /run/dashd
-RuntimeDirectory=dashd
+# /run/dashbased
+RuntimeDirectory=dashbased
 RuntimeDirectoryMode=0710
 
-# /etc/dash
-ConfigurationDirectory=dash
+# /etc/dashbase
+ConfigurationDirectory=dashbase
 ConfigurationDirectoryMode=0710
 
-# /var/lib/dashd
-StateDirectory=dashd
+# /var/lib/dashbased
+StateDirectory=dashbased
 StateDirectoryMode=0710
 
 # Hardening measures

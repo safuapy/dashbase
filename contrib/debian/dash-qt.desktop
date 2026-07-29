@@ -1,14 +1,14 @@
 [Desktop Entry]
 Version=1.0
-Name=Dash Core
-Comment=Dash P2P Cryptocurrency
-Comment[de]=Verbinde mit dem Dash peer-to-peer Netzwerk
-Comment[fr]=Dash, monnaie virtuelle cryptographique pair à pair
-Comment[tr]=Dash, eşten eşe kriptografik sanal para birimi
-Exec=dash-qt %u
+Name=Dashbase Core
+Comment=Dashbase P2P Cryptocurrency
+Comment[de]=Verbinde mit dem Dashbase peer-to-peer Netzwerk
+Comment[fr]=Dashbase, monnaie virtuelle cryptographique pair à pair
+Comment[tr]=Dashbase, eşten eşe kriptografik sanal para birimi
+Exec=dashbase-qt %u
 Terminal=false
 Type=Application
-Icon=dash128
-MimeType=x-scheme-handler/dash;
+Icon=dashbase128
+MimeType=x-scheme-handler/dashbase;
 Categories=Office;Finance;P2P;Network;Qt;
-StartupWMClass=Dash-qt
+StartupWMClass=Dashbase-qt
