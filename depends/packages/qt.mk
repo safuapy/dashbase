@@ -14,6 +14,7 @@ $(package)_patches+= no_sdk_version_check.patch
 $(package)_patches+= fix_qpainter_non_determinism.patch fix_lib_paths.patch fix_android_pch.patch
 $(package)_patches+= fix_limits_header.patch
 $(package)_patches+= fix_montery_include.patch
+$(package)_patches+= fix_libpng_fp_h.patch
 $(package)_patches += glibc_compatibility.patch
 
 # Update OSX_QT_TRANSLATIONS when this is updated
