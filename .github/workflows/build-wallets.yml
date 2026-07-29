@@ -27,7 +27,7 @@ jobs:
             host_triplet: x86_64-apple-darwin
             gui: 'true'
             artifact_name: dashcore-macos-intel
-            artifact_ext: tar.gz
+            artifact_ext: dmg
 
           - target: windows
             runner: ubuntu-22.04
@@ -93,7 +93,7 @@ jobs:
           brew install automake libtool pkg-config libnatpmp berkeley-db boost libevent qt@5 miniupnpc zeromq sqlite librsvg ccache python3
           pip3 install --break-system-packages setuptools
 
-      - name: Build macOS (depends + configure + make)
+      - name: Build macOS (depends + configure + make + deploy)
         if: matrix.target == 'macos-intel'
         run: |
           export PATH="$(brew --prefix qt@5)/bin:$PATH"
@@ -107,19 +107,34 @@ jobs:
             ./configure --prefix=/opt/dashbase --with-gui=yes CC="ccache clang" CXX="ccache clang++" CXXFLAGS="-Wno-enum-constexpr-conversion" CPPFLAGS="-DBOOST_NO_CXX98_FUNCTION_BASE"
           make -j$(sysctl -n hw.logicalcpu)
           make install DESTDIR="$PWD/release"
+          # Build .app bundle and .dmg via macdeployqtplus
+          make deploy
           ccache -s 2>/dev/null || true
 
-      - name: Package macOS
+      - name: Package macOS DMG
         if: matrix.target == 'macos-intel'
         run: |
-          STAGING="dashcore-${{ steps.version.outputs.version }}-macos-intel"
+          # Find the DMG produced by make deploy
+          DMG_FILE=$(ls *.dmg 2>/dev/null | head -1)
+          if [ -z "$DMG_FILE" ]; then
+            echo "ERROR: No DMG found, falling back to tar.gz"
+            STAGING="dashcore-${{ steps.version.outputs.version }}-macos-intel"
+            mkdir -p "$STAGING"
+            cp -R release/opt/dashbase/{bin,lib,share} "$STAGING/" 2>/dev/null || true
+            tar -czf "${{ matrix.artifact_name }}.tar.gz" "$STAGING"
+            exit 0
+          fi
+          echo "Found DMG: $DMG_FILE"
+          # Ad-hoc sign the DMG so Gatekeeper shows a cleaner warning
+          # (still requires right-click -> Open, but not "damaged")
+          codesign -s - --force "$DMG_FILE" 2>/dev/null || true
+          # Rename to our artifact name
+          mv "$DMG_FILE" "${{ matrix.artifact_name }}.dmg" || true
+          # Also package daemon binaries in a separate tar.gz for CLI users
+          STAGING="dashcore-${{ steps.version.outputs.version }}-macos-intel-daemon"
           mkdir -p "$STAGING"
           cp -R release/opt/dashbase/{bin,lib,share} "$STAGING/" 2>/dev/null || true
-          # Include Qt plugins and dylibs if present
-          if [ -d "depends/${{ matrix.host_triplet }}/plugins" ]; then
-            cp -R depends/${{ matrix.host_triplet }}/plugins "$STAGING/" 2>/dev/null || true
-          fi
-          tar -czf "${{ matrix.artifact_name }}.${{ matrix.artifact_ext }}" "$STAGING"
+          tar -czf "${{ matrix.artifact_name }}-daemon.tar.gz" "$STAGING"
 
       # ── Windows (cross-compile from Ubuntu) ──────────────────────
       - name: Install Windows cross-compile dependencies
@@ -206,7 +221,11 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
-          path: ${{ matrix.artifact_name }}.${{ matrix.artifact_ext }}
+          path: |
+            ${{ matrix.artifact_name }}.${{ matrix.artifact_ext }}
+            ${{ matrix.artifact_name }}-daemon.tar.gz
+            ${{ matrix.artifact_name }}.tar.gz
+          if-no-files-found: ignore
           retention-days: 30
 
   # ── Release: attach artifacts to GitHub Release on tag push ─────
@@ -230,6 +249,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
+            artifacts/**/*.dmg
             artifacts/**/*.tar.gz
             artifacts/**/*.zip
           generate_release_notes: true
