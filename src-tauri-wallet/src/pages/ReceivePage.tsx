@@ -49,9 +49,9 @@ export default function ReceivePage() {
   };
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="max-w-3xl space-y-6 animate-fade-in-up">
       <div>
-        <h1 className="text-xl font-bold text-[var(--color-text)]">Receive</h1>
+        <h1 className="text-xl font-bold tracking-tight text-[var(--color-text)]">Receive</h1>
         <p className="text-sm text-[var(--color-text-muted)]">Generate a new address or use an existing one</p>
       </div>
 
@@ -75,9 +75,11 @@ export default function ReceivePage() {
           </div>
 
           {newAddr && (
-            <div className="flex items-center gap-6 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
+            <div className="flex items-center gap-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4 animate-scale-in">
               {qrSrc && (
-                <img src={qrSrc} alt="QR code" className="h-32 w-32 rounded-md" />
+                <div className="rounded-lg bg-white p-2">
+                  <img src={qrSrc} alt="QR code" className="h-32 w-32" />
+                </div>
               )}
               <div className="flex-1">
                 <p className="text-xs text-[var(--color-text-muted)] mb-1">New address</p>
@@ -107,13 +109,19 @@ export default function ReceivePage() {
         </CardHeader>
         <CardContent>
           {receiveAddresses.length === 0 ? (
-            <p className="py-6 text-center text-sm text-[var(--color-text-muted)]">No addresses yet</p>
+            <div className="flex flex-col items-center py-12">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-surface-hover)]">
+                <Plus className="h-5 w-5 text-[var(--color-text-dim)]" />
+              </div>
+              <p className="mt-3 text-sm text-[var(--color-text-muted)]">No addresses yet</p>
+              <p className="mt-1 text-xs text-[var(--color-text-dim)]">Generate one above to get started</p>
+            </div>
           ) : (
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               {receiveAddresses.map((addr) => (
                 <div
                   key={addr.address}
-                  className="flex items-center justify-between rounded-md px-3 py-2.5 hover:bg-[var(--color-surface-hover)] transition-colors"
+                  className="group flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-[var(--color-surface-hover)] transition-colors"
                 >
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-[var(--color-text)]">
@@ -123,7 +131,7 @@ export default function ReceivePage() {
                       {truncateAddress(addr.address, 12)}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
                     <Button
                       variant="ghost"
                       size="icon"
@@ -153,11 +161,13 @@ export default function ReceivePage() {
       {/* QR modal */}
       {qrSrc && !newAddr && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 animate-scale-in"
           onClick={() => setQrSrc(null)}
         >
-          <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
-            <img src={qrSrc} alt="QR code" className="h-48 w-48 rounded-md" />
+          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
+            <div className="rounded-lg bg-white p-3">
+              <img src={qrSrc} alt="QR code" className="h-48 w-48" />
+            </div>
           </div>
         </div>
       )}

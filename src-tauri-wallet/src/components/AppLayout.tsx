@@ -9,12 +9,10 @@ import {
   Vote,
   Settings,
   RefreshCw,
-  Wifi,
-  WifiOff,
+  Terminal,
 } from "lucide-react";
 import { useWalletStore } from "@/stores/walletStore";
-import { cn } from "@/lib/utils";
-import { formatShortAmount } from "@/lib/utils";
+import { cn, formatShortAmount } from "@/lib/utils";
 
 const navItems = [
   { to: "/", label: "Overview", icon: LayoutDashboard },
@@ -24,10 +22,11 @@ const navItems = [
   { to: "/masternodes", label: "Masternodes", icon: Server },
   { to: "/governance", label: "Governance", icon: Vote },
   { to: "/settings", label: "Settings", icon: Settings },
+  { to: "/debug", label: "Debug", icon: Terminal },
 ];
 
 export function AppLayout() {
-  const { connected, balance, blockchainInfo, refresh, loading } = useWalletStore();
+  const { connected, balance, blockchainInfo, refresh, loading, error } = useWalletStore();
 
   useEffect(() => {
     refresh();
@@ -39,12 +38,21 @@ export function AppLayout() {
     <div className="flex h-screen w-screen overflow-hidden bg-[var(--color-bg)]">
       {/* Sidebar */}
       <aside className="flex w-60 flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)]">
-        <div className="flex items-center gap-2 px-5 py-5 border-b border-[var(--color-border)]">
-          <img src="/dashbase.svg" alt="Dashbase" className="h-7 w-7" />
-          <span className="text-base font-bold text-[var(--color-text)]">Dashbase</span>
+        {/* Logo */}
+        <div className="flex items-center gap-2.5 px-5 py-5 border-b border-[var(--color-border)]">
+          <div className="relative">
+            <img src="/dashbase.svg" alt="Dashbase" className="h-7 w-7" />
+            <div className="absolute inset-0 blur-lg opacity-30">
+              <img src="/dashbase.svg" alt="" className="h-7 w-7" />
+            </div>
+          </div>
+          <span className="text-base font-bold tracking-tight text-[var(--color-text)]">
+            Dashbase
+          </span>
         </div>
 
-        <nav className="flex-1 space-y-1 px-3 py-4">
+        {/* Nav */}
+        <nav className="flex-1 space-y-0.5 px-3 py-4">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
@@ -52,38 +60,57 @@ export function AppLayout() {
               end={item.to === "/"}
               className={({ isActive }) =>
                 cn(
-                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
                   isActive
                     ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
                     : "text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)]"
                 )
               }
             >
-              <item.icon className="h-4 w-4" />
-              {item.label}
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-[var(--color-primary)]" />
+                  )}
+                  <item.icon className="h-4 w-4 shrink-0" />
+                  {item.label}
+                </>
+              )}
             </NavLink>
           ))}
         </nav>
 
         {/* Connection status */}
-        <div className="border-t border-[var(--color-border)] px-4 py-3">
+        <div className="border-t border-[var(--color-border)] px-4 py-3.5">
           <div className="flex items-center gap-2 text-xs">
+            <span
+              className={cn(
+                "h-2 w-2 rounded-full",
+                connected
+                  ? "bg-green-400 pulse-glow"
+                  : "bg-red-400"
+              )}
+            />
             {connected ? (
-              <>
-                <Wifi className="h-3.5 w-3.5 text-green-400" />
-                <span className="text-[var(--color-text-muted)]">Connected</span>
-              </>
+              <span className="text-[var(--color-text-muted)]">Connected</span>
             ) : (
-              <>
-                <WifiOff className="h-3.5 w-3.5 text-red-400" />
-                <span className="text-[var(--color-text-muted)]">Disconnected</span>
-              </>
+              <span className="text-[var(--color-text-muted)]">Disconnected</span>
+            )}
+            {error && !connected && (
+              <span
+                className="text-[var(--color-text-dim)] truncate"
+                title={error}
+              >
+                · {error}
+              </span>
             )}
           </div>
           {blockchainInfo && (
-            <div className="mt-1 text-xs text-[var(--color-text-dim)]">
+            <div className="mt-1.5 text-xs text-[var(--color-text-dim)]">
               Block {blockchainInfo.blocks.toLocaleString()}
-              {blockchainInfo.initialblockdownload && " · Syncing..."}
+              {blockchainInfo.initialblockdownload && (
+                <span className="text-[var(--color-primary)]"> · Syncing</span>
+              )}
             </div>
           )}
         </div>
@@ -97,7 +124,7 @@ export function AppLayout() {
             {balance && (
               <div className="flex items-center gap-3">
                 <span className="text-sm text-[var(--color-text-muted)]">Balance</span>
-                <span className="text-sm font-semibold text-[var(--color-text)]">
+                <span className="text-sm font-semibold tabular-nums text-[var(--color-text)]">
                   {formatShortAmount(balance.balance)} DASH
                 </span>
                 {balance.anonymized_balance > 0 && (
@@ -111,7 +138,7 @@ export function AppLayout() {
           <button
             onClick={() => refresh()}
             disabled={loading}
-            className="flex items-center gap-2 rounded-md px-3 py-1.5 text-xs text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)] transition-colors cursor-pointer"
+            className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)] transition-all cursor-pointer active:scale-95"
           >
             <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
             Refresh

@@ -7,6 +7,7 @@ import HistoryPage from "./pages/HistoryPage";
 import MasternodesPage from "./pages/MasternodesPage";
 import GovernancePage from "./pages/GovernancePage";
 import SettingsPage from "./pages/SettingsPage";
+import DebugPage from "./pages/DebugPage";
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
         <Route path="/masternodes" element={<MasternodesPage />} />
         <Route path="/governance" element={<GovernancePage />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/debug" element={<DebugPage />} />
       </Route>
     </Routes>
   );

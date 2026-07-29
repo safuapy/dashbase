@@ -2,19 +2,28 @@
 @import "tw-animate-css";
 
 @theme {
-  --color-bg: #0a0b0d;
-  --color-surface: #131517;
-  --color-surface-hover: #1a1d20;
-  --color-border: #232629;
-  --color-primary: #3b82f6;
-  --color-primary-hover: #2563eb;
+  --color-bg: #0a0e1a;
+  --color-bg-elevated: #0d1220;
+  --color-surface: #111726;
+  --color-surface-hover: #18202f;
+  --color-surface-active: #1e2839;
+  --color-border: #1e2839;
+  --color-border-hover: #2a3650;
+  --color-primary: #f59e0b;
+  --color-primary-hover: #fbbf24;
+  --color-primary-dim: #f59e0b20;
   --color-accent: #8b5cf6;
+  --color-accent-dim: #8b5cf620;
   --color-success: #22c55e;
+  --color-success-dim: #22c55e15;
   --color-warning: #f59e0b;
   --color-danger: #ef4444;
-  --color-text: #e4e6e8;
-  --color-text-muted: #8b8f95;
-  --color-text-dim: #5c6066;
+  --color-danger-dim: #ef444415;
+  --color-info: #3b82f6;
+  --color-info-dim: #3b82f615;
+  --color-text: #f1f5f9;
+  --color-text-muted: #94a3b8;
+  --color-text-dim: #475569;
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", "SF Mono", "Fira Code", monospace;
 }
@@ -33,19 +42,60 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.01em;
 }
 
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border);
-  border-radius: 4px;
+  background: var(--color-border-hover);
+  border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-surface-hover);
+  background: var(--color-surface-active);
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 var(--color-success-dim); }
+  50% { opacity: 0.8; box-shadow: 0 0 0 4px transparent; }
+}
+.pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+  animation: fade-in-up 0.3s ease-out;
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-scale-in {
+  animation: scale-in 0.2s ease-out;
+}
+
+.glow-primary {
+  box-shadow: 0 0 20px -5px var(--color-primary-dim);
+}
+
+.glow-text-primary {
+  text-shadow: 0 0 20px var(--color-primary-dim);
+}
+
+.card-gradient {
+  background: linear-gradient(135deg, var(--color-surface) 0%, var(--color-bg-elevated) 100%);
+}
+
+.hero-gradient {
+  background: linear-gradient(135deg, #111726 0%, #0d1220 50%, #0a0e1a 100%);
 }

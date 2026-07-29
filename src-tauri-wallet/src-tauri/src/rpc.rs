@@ -83,7 +83,7 @@ impl RpcClient {
 }
 
 pub async fn get_client() -> Result<RpcClient, String> {
-    let config = crate::config::get_config();
+    let config = crate::config::get_config().await;
     Ok(RpcClient::new(
         &config.rpc_host,
         config.rpc_port,

@@ -56,10 +56,10 @@ export default function HistoryPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in-up">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-[var(--color-text)]">Transaction History</h1>
+          <h1 className="text-xl font-bold tracking-tight text-[var(--color-text)]">Transaction History</h1>
           <p className="text-sm text-[var(--color-text-muted)]">{filtered.length} transactions</p>
         </div>
         <Button variant="secondary" size="sm" onClick={exportCSV}>
@@ -86,7 +86,7 @@ export default function HistoryPage() {
                 <button
                   key={f.key}
                   onClick={() => setFilter(f.key)}
-                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
+                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all cursor-pointer ${
                     filter === f.key
                       ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
                       : "text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)]"
@@ -100,22 +100,26 @@ export default function HistoryPage() {
 
           {/* Transaction list */}
           {filtered.length === 0 ? (
-            <p className="py-12 text-center text-sm text-[var(--color-text-muted)]">
-              No transactions found
-            </p>
+            <div className="flex flex-col items-center py-16">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-surface-hover)]">
+                <Search className="h-5 w-5 text-[var(--color-text-dim)]" />
+              </div>
+              <p className="mt-3 text-sm text-[var(--color-text-muted)]">No transactions found</p>
+              <p className="mt-1 text-xs text-[var(--color-text-dim)]">Try adjusting your search or filters</p>
+            </div>
           ) : (
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               {filtered.map((tx) => {
                 const isSend = tx.category === "send";
                 return (
                   <div
                     key={tx.txid + tx.address}
-                    className="flex items-center justify-between rounded-md px-3 py-3 hover:bg-[var(--color-surface-hover)] transition-colors"
+                    className="group flex items-center justify-between rounded-lg px-3 py-3 hover:bg-[var(--color-surface-hover)] transition-colors"
                   >
                     <div className="flex items-center gap-3">
                       <div
-                        className={`flex h-9 w-9 items-center justify-center rounded-full ${
-                          isSend ? "bg-red-500/10" : "bg-green-500/10"
+                        className={`flex h-9 w-9 items-center justify-center rounded-lg ${
+                          isSend ? "bg-[var(--color-danger-dim)]" : "bg-[var(--color-success-dim)]"
                         }`}
                       >
                         {isSend ? (
@@ -129,7 +133,7 @@ export default function HistoryPage() {
                           {isSend ? "Sent" : "Received"}
                           {tx.label && ` · ${tx.label}`}
                         </p>
-                        <p className="text-xs text-[var(--color-text-dim)]">
+                        <p className="font-mono text-xs text-[var(--color-text-dim)]">
                           {tx.address ? truncateAddress(tx.address, 10) : "—"} · {timeAgo(tx.timereceived || tx.time)}
                         </p>
                       </div>
@@ -137,7 +141,7 @@ export default function HistoryPage() {
                     <div className="flex items-center gap-3">
                       <div className="text-right">
                         <p
-                          className={`text-sm font-semibold ${
+                          className={`text-sm font-semibold tabular-nums ${
                             isSend ? "text-red-400" : "text-green-400"
                           }`}
                         >

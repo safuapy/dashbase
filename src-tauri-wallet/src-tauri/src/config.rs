@@ -13,7 +13,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             rpc_host: "127.0.0.1".to_string(),
-            rpc_port: 9988,
+            rpc_port: 9998,
             rpc_user: "dashbase".to_string(),
             rpc_password: "dashbase".to_string(),
         }
@@ -74,8 +74,8 @@ pub async fn init_config() {
     *guard = Some(config);
 }
 
-pub fn get_config() -> Config {
-    let guard = CONFIG.blocking_read();
+pub async fn get_config() -> Config {
+    let guard = CONFIG.read().await;
     guard
         .as_ref()
         .cloned()
@@ -106,7 +106,11 @@ fn find_conf_file() -> Option<std::path::PathBuf> {
         home.join(".dashbase").join("dashbase.conf"),
         home.join(".dashbase").join("dash.conf"),
         home.join("Library").join("Application Support").join("Dashbase").join("dashbase.conf"),
+        home.join("Library").join("Application Support").join("DashCore").join("dashbase.conf"),
+        home.join("Library").join("Application Support").join("DashCore").join("dash.conf"),
         home.join("AppData").join("Roaming").join("Dashbase").join("dashbase.conf"),
+        home.join("AppData").join("Roaming").join("DashCore").join("dashbase.conf"),
+        home.join("AppData").join("Roaming").join("DashCore").join("dash.conf"),
     ];
 
     for candidate in &candidates {

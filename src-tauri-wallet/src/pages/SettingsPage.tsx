@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
-import { Lock, Unlock, Key, Save } from "lucide-react";
+import { Lock, Unlock, Key, Save, Shield, HardDrive, Network } from "lucide-react";
 
 export default function SettingsPage() {
   const { blockchainInfo, peers, encryptWallet, unlockWallet, lockWallet, walletPassphraseChange, backupWallet } = useWalletStore();
@@ -19,24 +19,31 @@ export default function SettingsPage() {
   const showErr = (e: string) => { setErr(e); setMsg(null); };
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="max-w-2xl space-y-6 animate-fade-in-up">
       <div>
-        <h1 className="text-xl font-bold text-[var(--color-text)]">Settings</h1>
+        <h1 className="text-xl font-bold tracking-tight text-[var(--color-text)]">Settings</h1>
         <p className="text-sm text-[var(--color-text-muted)]">Wallet and network settings</p>
       </div>
 
       {msg && (
-        <div className="rounded-md border border-green-500/20 bg-green-500/5 px-4 py-3 text-sm text-green-400">{msg}</div>
+        <div className="rounded-lg border border-green-500/20 bg-[var(--color-success-dim)] px-4 py-3 text-sm text-green-400 animate-scale-in">{msg}</div>
       )}
       {err && (
-        <div className="rounded-md border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-400">{err}</div>
+        <div className="rounded-lg border border-red-500/20 bg-[var(--color-danger-dim)] px-4 py-3 text-sm text-red-400 animate-scale-in">{err}</div>
       )}
 
       {/* Wallet security */}
       <Card>
         <CardHeader>
-          <CardTitle>Wallet Security</CardTitle>
-          <CardDescription>Encrypt, unlock, or change your wallet passphrase</CardDescription>
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-primary)]/10">
+              <Shield className="h-4 w-4 text-[var(--color-primary)]" />
+            </div>
+            <div>
+              <CardTitle>Wallet Security</CardTitle>
+              <CardDescription>Encrypt, unlock, or change your wallet passphrase</CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-5">
           <div className="space-y-2">
@@ -120,8 +127,15 @@ export default function SettingsPage() {
       {/* Backup */}
       <Card>
         <CardHeader>
-          <CardTitle>Backup</CardTitle>
-          <CardDescription>Backup your wallet.dat file</CardDescription>
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-accent-dim)]">
+              <HardDrive className="h-4 w-4 text-[var(--color-accent)]" />
+            </div>
+            <div>
+              <CardTitle>Backup</CardTitle>
+              <CardDescription>Backup your wallet.dat file</CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="flex gap-2">
@@ -146,7 +160,12 @@ export default function SettingsPage() {
       {/* Network info */}
       <Card>
         <CardHeader>
-          <CardTitle>Network</CardTitle>
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-info-dim)]">
+              <Network className="h-4 w-4 text-blue-400" />
+            </div>
+            <CardTitle>Network</CardTitle>
+          </div>
         </CardHeader>
         <CardContent className="space-y-3">
           {blockchainInfo && (
@@ -157,11 +176,11 @@ export default function SettingsPage() {
               </div>
               <div>
                 <p className="text-[var(--color-text-muted)]">Blocks</p>
-                <p className="font-medium text-[var(--color-text)]">{blockchainInfo.blocks.toLocaleString()}</p>
+                <p className="font-medium tabular-nums text-[var(--color-text)]">{blockchainInfo.blocks.toLocaleString()}</p>
               </div>
               <div>
                 <p className="text-[var(--color-text-muted)]">Headers</p>
-                <p className="font-medium text-[var(--color-text)]">{blockchainInfo.headers.toLocaleString()}</p>
+                <p className="font-medium tabular-nums text-[var(--color-text)]">{blockchainInfo.headers.toLocaleString()}</p>
               </div>
               <div>
                 <p className="text-[var(--color-text-muted)]">ChainLocks</p>
@@ -171,11 +190,11 @@ export default function SettingsPage() {
               </div>
               <div>
                 <p className="text-[var(--color-text-muted)]">Connected Peers</p>
-                <p className="font-medium text-[var(--color-text)]">{peers.length}</p>
+                <p className="font-medium tabular-nums text-[var(--color-text)]">{peers.length}</p>
               </div>
               <div>
                 <p className="text-[var(--color-text-muted)]">Disk Size</p>
-                <p className="font-medium text-[var(--color-text)]">
+                <p className="font-medium tabular-nums text-[var(--color-text)]">
                   {(blockchainInfo.size_on_disk / 1024 / 1024).toFixed(1)} MB
                 </p>
               </div>

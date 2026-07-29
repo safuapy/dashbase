@@ -62,6 +62,45 @@ pub struct BlockchainInfo {
     pub chainlocks: bool,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct MasternodeInfo {
+    pub alias: String,
+    pub status: String,
+    pub addr: String,
+    pub version: i64,
+    pub lastseen: i64,
+    pub activetime: i64,
+    pub lastpaid: i64,
+    pub ip: String,
+    pub protocol: i64,
+    pub payee: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct GovernanceProposal {
+    pub name: String,
+    pub hash: String,
+    pub fee_hash: String,
+    pub absolute_yes_count: i64,
+    pub yes_count: i64,
+    pub no_count: i64,
+    pub abstain_count: i64,
+    pub funding_yes_count: i64,
+    pub funding_no_count: i64,
+    pub delete_yes_count: i64,
+    pub delete_no_count: i64,
+    pub cached_funding_state: bool,
+    pub cached_delete_state: bool,
+    pub cached_endored_state: bool,
+    pub creation_time: i64,
+    pub end_epoch_time: i64,
+    pub payment_address: String,
+    pub payment_amount: f64,
+    pub url: String,
+    pub is_valid: bool,
+    pub is_active: bool,
+}
+
 #[tauri::command]
 async fn get_balance() -> Result<WalletBalance, String> {
     let client = rpc::get_client().await.map_err(|e| e.to_string())?;
@@ -77,7 +116,7 @@ async fn get_balance() -> Result<WalletBalance, String> {
         .map_err(|e| e.to_string())?;
 
     let immature: f64 = client
-        .call("getbalance", &["".into(), 0.into(), true.into()])
+        .call("getbalance", &["*".into(), 0.into(), true.into()])
         .await
         .map_err(|e| e.to_string())?;
 
@@ -297,6 +336,235 @@ async fn backup_wallet(dest: String) -> Result<(), String> {
     Ok(())
 }
 
+// ── Masternode commands ──
+
+#[tauri::command]
+async fn list_masternodes() -> Result<Vec<MasternodeInfo>, String> {
+    let client = rpc::get_client().await.map_err(|e| e.to_string())?;
+    let result: serde_json::Value = client
+        .call("masternodelist", &["full".into()])
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let mut mns = Vec::new();
+    if let Some(obj) = result.as_object() {
+        for (key, val) in obj {
+            let parts: Vec<&str> = key.splitn(2, ' ').collect();
+            let alias = parts.first().map(|s| s.to_string()).unwrap_or_default();
+            let status = parts.get(1).map(|s| s.to_string()).unwrap_or_default();
+
+            let v = val.as_array().cloned().unwrap_or_default();
+            mns.push(MasternodeInfo {
+                alias,
+                status,
+                addr: v.first().and_then(|x| x.as_str()).unwrap_or("").to_string(),
+                version: v.get(2).and_then(|x| x.as_i64()).unwrap_or(0),
+                lastseen: v.get(3).and_then(|x| x.as_i64()).unwrap_or(0),
+                activetime: v.get(4).and_then(|x| x.as_i64()).unwrap_or(0),
+                lastpaid: v.get(5).and_then(|x| x.as_i64()).unwrap_or(0),
+                ip: v.get(6).and_then(|x| x.as_str()).unwrap_or("").to_string(),
+                protocol: v.get(7).and_then(|x| x.as_i64()).unwrap_or(0),
+                payee: v.get(9).and_then(|x| x.as_str()).unwrap_or("").to_string(),
+            });
+        }
+    }
+    Ok(mns)
+}
+
+#[tauri::command]
+async fn masternode_status() -> Result<serde_json::Value, String> {
+    let client = rpc::get_client().await.map_err(|e| e.to_string())?;
+    let result: serde_json::Value = client
+        .call("masternode", &["status".into()])
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(result)
+}
+
+#[tauri::command]
+async fn masternode_start_alias(alias: String) -> Result<String, String> {
+    let client = rpc::get_client().await.map_err(|e| e.to_string())?;
+    let result: String = client
+        .call("masternode", &["start-alias".into(), alias.into()])
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(result)
+}
+
+#[tauri::command]
+async fn masternode_start_all() -> Result<String, String> {
+    let client = rpc::get_client().await.map_err(|e| e.to_string())?;
+    let result: String = client
+        .call("masternode", &["start".into()])
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(result)
+}
+
+#[tauri::command]
+async fn masternode_start_missing() -> Result<String, String> {
+    let client = rpc::get_client().await.map_err(|e| e.to_string())?;
+    let result: String = client
+        .call("masternode", &["start-missing".into()])
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(result)
+}
+
+#[tauri::command]
+async fn masternode_outputs() -> Result<serde_json::Value, String> {
+    let client = rpc::get_client().await.map_err(|e| e.to_string())?;
+    let result: serde_json::Value = client
+        .call("masternode", &["outputs".into()])
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(result)
+}
+
+#[tauri::command]
+async fn masternode_create collateral_tx: String,
+    collateral_index: i64,
+    ip: String,
+    payee: String,
+) -> Result<String, String> {
+    let client = rpc::get_client().await.map_err(|e| e.to_string())?;
+    let result: String = client
+        .call(
+            "createmasternode",
+            &[
+                collateral_tx.into(),
+                collateral_index.into(),
+                ip.into(),
+                payee.into(),
+            ],
+        )
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(result)
+}
+
+// ── Governance commands ──
+
+#[tauri::command]
+async fn list_proposals() -> Result<Vec<GovernanceProposal>, String> {
+    let client = rpc::get_client().await.map_err(|e| e.to_string())?;
+    let result: serde_json::Value = client
+        .call("gobject", &["list".into(), "all".into()])
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let mut proposals = Vec::new();
+    if let Some(obj) = result.as_object() {
+        for (hash, val) in obj {
+            let data = val.as_object().cloned().unwrap_or_default();
+            proposals.push(GovernanceProposal {
+                name: data.get("DataString").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                hash: hash.clone(),
+                fee_hash: data.get("FeeHash").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                absolute_yes_count: data.get("AbsoluteYesCount").and_then(|v| v.as_i64()).unwrap_or(0),
+                yes_count: data.get("YesCount").and_then(|v| v.as_i64()).unwrap_or(0),
+                no_count: data.get("NoCount").and_then(|v| v.as_i64()).unwrap_or(0),
+                abstain_count: data.get("AbstainCount").and_then(|v| v.as_i64()).unwrap_or(0),
+                funding_yes_count: data.get("FundingYesCount").and_then(|v| v.as_i64()).unwrap_or(0),
+                funding_no_count: data.get("FundingNoCount").and_then(|v| v.as_i64()).unwrap_or(0),
+                delete_yes_count: data.get("DeleteYesCount").and_then(|v| v.as_i64()).unwrap_or(0),
+                delete_no_count: data.get("DeleteNoCount").and_then(|v| v.as_i64()).unwrap_or(0),
+                cached_funding_state: data.get("CachedFundingState").and_then(|v| v.as_bool()).unwrap_or(false),
+                cached_delete_state: data.get("CachedDeleteState").and_then(|v| v.as_bool()).unwrap_or(false),
+                cached_endored_state: data.get("CachedEndorsedState").and_then(|v| v.as_bool()).unwrap_or(false),
+                creation_time: data.get("CreationTime").and_then(|v| v.as_i64()).unwrap_or(0),
+                end_epoch_time: data.get("EndEpochTime").and_then(|v| v.as_i64()).unwrap_or(0),
+                payment_address: data.get("PaymentAddress").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                payment_amount: data.get("PaymentAmount").and_then(|v| v.as_f64()).unwrap_or(0.0),
+                url: data.get("URL").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                is_valid: data.get("IsValid").and_then(|v| v.as_bool()).unwrap_or(false),
+                is_active: data.get("IsActivated").and_then(|v| v.as_bool()).unwrap_or(false),
+            });
+        }
+    }
+    Ok(proposals)
+}
+
+#[tauri::command]
+async fn vote_on_proposal(
+    proposal_hash: String,
+    vote: String,
+    signal: String,
+) -> Result<String, String> {
+    let client = rpc::get_client().await.map_err(|e| e.to_string())?;
+    let result: String = client
+        .call(
+            "gobject",
+            &["vote".into(), proposal_hash.into(), vote.into(), signal.into()],
+        )
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(result)
+}
+
+#[tauri::command]
+async fn get_proposal_info(proposal_hash: String) -> Result<serde_json::Value, String> {
+    let client = rpc::get_client().await.map_err(|e| e.to_string())?;
+    let result: serde_json::Value = client
+        .call("gobject", &["get".into(), proposal_hash.into()])
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(result)
+}
+
+// ── Debug / RPC console ──
+
+#[tauri::command]
+async fn rpc_command(method: String, params: Vec<String>) -> Result<serde_json::Value, String> {
+    let client = rpc::get_client().await.map_err(|e| e.to_string())?;
+    let params_json: Vec<serde_json::Value> = params.into_iter().map(serde_json::Value::from).collect();
+    let result: serde_json::Value = client
+        .call(&method, &params_json)
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(result)
+}
+
+#[tauri::command]
+async fn get_raw_mempool() -> Result<serde_json::Value, String> {
+    let client = rpc::get_client().await.map_err(|e| e.to_string())?;
+    let result: serde_json::Value = client
+        .call("getrawmempool", &[true.into()])
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(result)
+}
+
+#[tauri::command]
+async fn get_mining_info() -> Result<serde_json::Value, String> {
+    let client = rpc::get_client().await.map_err(|e| e.to_string())?;
+    let result: serde_json::Value = client
+        .call("getmininginfo", &[])
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(result)
+}
+
+#[tauri::command]
+async fn get_network_info() -> Result<serde_json::Value, String> {
+    let client = rpc::get_client().await.map_err(|e| e.to_string())?;
+    let result: serde_json::Value = client
+        .call("getnetworkinfo", &[])
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(result)
+}
+
+#[tauri::command]
+async fn get_wallet_info() -> Result<serde_json::Value, String> {
+    let client = rpc::get_client().await.map_err(|e| e.to_string())?;
+    let result: serde_json::Value = client
+        .call("getwalletinfo", &[])
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(result)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -323,6 +591,21 @@ pub fn run() {
             lock_wallet,
             change_passphrase,
             backup_wallet,
+            list_masternodes,
+            masternode_status,
+            masternode_start_alias,
+            masternode_start_all,
+            masternode_start_missing,
+            masternode_outputs,
+            masternode_create,
+            list_proposals,
+            vote_on_proposal,
+            get_proposal_info,
+            rpc_command,
+            get_raw_mempool,
+            get_mining_info,
+            get_network_info,
+            get_wallet_info,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

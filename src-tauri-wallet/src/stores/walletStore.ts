@@ -55,6 +55,43 @@ export interface BlockchainInfo {
   chainlocks: boolean;
 }
 
+export interface MasternodeInfo {
+  alias: string;
+  status: string;
+  addr: string;
+  version: number;
+  lastseen: number;
+  activetime: number;
+  lastpaid: number;
+  ip: string;
+  protocol: number;
+  payee: string;
+}
+
+export interface GovernanceProposal {
+  name: string;
+  hash: string;
+  fee_hash: string;
+  absolute_yes_count: number;
+  yes_count: number;
+  no_count: number;
+  abstain_count: number;
+  funding_yes_count: number;
+  funding_no_count: number;
+  delete_yes_count: number;
+  delete_no_count: number;
+  cached_funding_state: boolean;
+  cached_delete_state: boolean;
+  cached_endored_state: boolean;
+  creation_time: number;
+  end_epoch_time: number;
+  payment_address: string;
+  payment_amount: number;
+  url: string;
+  is_valid: boolean;
+  is_active: boolean;
+}
+
 interface WalletState {
   connected: boolean;
   loading: boolean;
@@ -64,8 +101,12 @@ interface WalletState {
   transactions: Transaction[];
   addresses: AddressBookEntry[];
   peers: PeerInfo[];
+  masternodes: MasternodeInfo[];
+  proposals: GovernanceProposal[];
 
   refresh: () => Promise<void>;
+  refreshMasternodes: () => Promise<void>;
+  refreshProposals: () => Promise<void>;
   sendToAddress: (
     address: string,
     amount: number,
@@ -79,6 +120,19 @@ interface WalletState {
   lockWallet: () => Promise<void>;
   walletPassphraseChange: (oldPass: string, newPass: string) => Promise<void>;
   backupWallet: (dest: string) => Promise<void>;
+  masternodeStatus: () => Promise<unknown>;
+  masternodeStartAlias: (alias: string) => Promise<string>;
+  masternodeStartAll: () => Promise<string>;
+  masternodeStartMissing: () => Promise<string>;
+  masternodeOutputs: () => Promise<unknown>;
+  masternodeCreate: (collateralTx: string, collateralIndex: number, ip: string, payee: string) => Promise<string>;
+  voteOnProposal: (proposalHash: string, vote: string, signal: string) => Promise<string>;
+  getProposalInfo: (proposalHash: string) => Promise<unknown>;
+  rpcCommand: (method: string, params: string[]) => Promise<unknown>;
+  getRawMempool: () => Promise<unknown>;
+  getMiningInfo: () => Promise<unknown>;
+  getNetworkInfo: () => Promise<unknown>;
+  getWalletInfo: () => Promise<unknown>;
 }
 
 export const useWalletStore = create<WalletState>((set) => ({
@@ -90,6 +144,8 @@ export const useWalletStore = create<WalletState>((set) => ({
   transactions: [],
   addresses: [],
   peers: [],
+  masternodes: [],
+  proposals: [],
 
   refresh: async () => {
     set({ loading: true, error: null });
@@ -113,6 +169,7 @@ export const useWalletStore = create<WalletState>((set) => ({
         peers,
       });
     } catch (err) {
+      console.error("[walletStore] refresh failed:", err);
       set({
         connected: false,
         loading: false,
@@ -156,5 +213,80 @@ export const useWalletStore = create<WalletState>((set) => ({
 
   backupWallet: async (dest) => {
     await invoke("backup_wallet", { dest });
+  },
+
+  refreshMasternodes: async () => {
+    try {
+      const masternodes = await invoke<MasternodeInfo[]>("list_masternodes").catch(() => []);
+      set({ masternodes });
+    } catch (err) {
+      console.error("[walletStore] refreshMasternodes failed:", err);
+    }
+  },
+
+  refreshProposals: async () => {
+    try {
+      const proposals = await invoke<GovernanceProposal[]>("list_proposals").catch(() => []);
+      set({ proposals });
+    } catch (err) {
+      console.error("[walletStore] refreshProposals failed:", err);
+    }
+  },
+
+  masternodeStatus: async () => {
+    return invoke("masternode_status");
+  },
+
+  masternodeStartAlias: async (alias) => {
+    return invoke<string>("masternode_start_alias", { alias });
+  },
+
+  masternodeStartAll: async () => {
+    return invoke<string>("masternode_start_all");
+  },
+
+  masternodeStartMissing: async () => {
+    return invoke<string>("masternode_start_missing");
+  },
+
+  masternodeOutputs: async () => {
+    return invoke("masternode_outputs");
+  },
+
+  masternodeCreate: async (collateralTx, collateralIndex, ip, payee) => {
+    return invoke<string>("masternode_create", {
+      collateralTx,
+      collateralIndex,
+      ip,
+      payee,
+    });
+  },
+
+  voteOnProposal: async (proposalHash, vote, signal) => {
+    return invoke<string>("vote_on_proposal", { proposalHash, vote, signal });
+  },
+
+  getProposalInfo: async (proposalHash) => {
+    return invoke("get_proposal_info", { proposalHash });
+  },
+
+  rpcCommand: async (method, params) => {
+    return invoke("rpc_command", { method, params });
+  },
+
+  getRawMempool: async () => {
+    return invoke("get_raw_mempool");
+  },
+
+  getMiningInfo: async () => {
+    return invoke("get_mining_info");
+  },
+
+  getNetworkInfo: async () => {
+    return invoke("get_network_info");
+  },
+
+  getWalletInfo: async () => {
+    return invoke("get_wallet_info");
   },
 }));
