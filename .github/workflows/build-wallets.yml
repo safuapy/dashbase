@@ -104,7 +104,7 @@ jobs:
           cd ..
           ./autogen.sh
           CONFIG_SITE="$PWD/depends/${{ matrix.host_triplet }}/share/config.site" \
-            ./configure --prefix=/opt/dashbase --with-gui=yes CC="ccache clang" CXX="ccache clang++"
+            ./configure --prefix=/opt/dashbase --with-gui=yes CC="ccache clang" CXX="ccache clang++" CXXFLAGS="-Wno-enum-constexpr-conversion"
           make -j$(sysctl -n hw.logicalcpu)
           make install DESTDIR="$PWD/release"
           ccache -s 2>/dev/null || true
