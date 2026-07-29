@@ -23,7 +23,7 @@ jobs:
       matrix:
         include:
           - target: macos-intel
-            runner: macos-13
+            runner: macos-15-intel
             host_triplet: x86_64-apple-darwin
             gui: 'true'
             artifact_name: dashcore-macos-intel
