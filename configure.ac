@@ -14,7 +14,7 @@ AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([build-aux/m4])
 
 BITCOIN_DAEMON_NAME=dashbased
-BITCOIN_GUI_NAME=dashbase-qt
+BITCOIN_GUI_NAME=dash-qt
 BITCOIN_CLI_NAME=dashbase-cli
 BITCOIN_TX_NAME=dashbase-tx
 BITCOIN_WALLET_TOOL_NAME=dashbase-wallet
