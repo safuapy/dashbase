@@ -2,6 +2,7 @@
 """Generate genesis block hash for Dashbase using X11 algorithm.
 
 Replicates the C++ CreateGenesisBlock logic from src/chainparams.cpp.
+Verified against original Dash genesis block hash.
 """
 import struct
 import hashlib
@@ -17,54 +18,113 @@ N_BITS = 0x1e0ffff0
 N_VERSION = 1
 N_TIME = int(sys.argv[1]) if len(sys.argv) > 1 else 1753734000
 
+# Original Dash genesis for verification
+DASH_TIME = 1390095618
+DASH_NONCE = 28917698
+DASH_HASH = "00000ffd590b1485b3caadc19b22e6379c733355108f107a430458cdf3407ab6"
+DASH_MERKLE = "e0028eb9648db56b1ac77cf090b99048a8007e2bb64b68f092c03c7f56a662c7"
+
+
 def double_sha256(data):
     return hashlib.sha256(hashlib.sha256(data).digest()).digest()
 
+
+def script_num_serialize(n):
+    """Serialize an integer as a CScriptNum (compact signed little-endian)."""
+    if n == 0:
+        return b""
+    result = []
+    neg = n < 0
+    absval = -n if neg else n
+    while absval:
+        result.append(absval & 0xff)
+        absval >>= 8
+    if result[-1] & 0x80:
+        result.append(0x80 if neg else 0x00)
+    elif neg:
+        result[-1] |= 0x80
+    return bytes(result)
+
+
+def push_data(data):
+    """Serialize a push opcode + data as CScript does."""
+    n = len(data)
+    if n < 0x4c:  # OP_PUSHDATA1
+        return bytes([n]) + data
+    elif n <= 0xff:
+        return b"\x4c" + bytes([n]) + data
+    elif n <= 0xffff:
+        return b"\x4d" + struct.pack("<H", n) + data
+    else:
+        return b"\x4e" + struct.pack("<I", n) + data
+
+
 def create_coinbase_tx():
-    """Create the genesis coinbase transaction (Dash/Bitcoin format)."""
-    # txNew.nVersion = 1
-    tx = struct.pack("<i", 1)  # version
+    """Create the genesis coinbase transaction matching C++ serialization exactly.
 
-    # vin.resize(1)
-    tx += struct.pack("<B", 1)  # 1 input
+    C++ code:
+      CMutableTransaction txNew;
+      txNew.nVersion = 1;  // int16_t
+      txNew.nType = TRANSACTION_NORMAL;  // uint16_t = 0
+      txNew.vin.resize(1);
+      txNew.vout.resize(1);
+      txNew.vin[0].scriptSig = CScript() << 486604799 << CScriptNum(4) << pszTimestamp;
+      txNew.vout[0].nValue = genesisReward;
+      txNew.vout[0].scriptPubKey = genesisOutputScript;
+      // nLockTime = 0 (default)
 
-    # vin[0].prevout (null hash + 0xffffffff)
-    tx += b"\x00" * 32  # prev txid
-    tx += struct.pack("<I", 0xffffffff)  # prev vout
+    CTransaction::Serialize writes:
+      int32_t n32bitVersion = nVersion | (nType << 16);  // = 1
+      s << n32bitVersion;   // 4 bytes LE
+      s << vin;             // vector<CTxIn>
+      s << vout;            // vector<CTxOut>
+      s << nLockTime;       // 4 bytes LE = 0
+      // nVersion=1, not 3, so no vExtraPayload
+    """
+    tx = b""
 
-    # vin[0].scriptSig = CScript() << 486604799 << CScriptNum(4) << pszTimestamp
-    # 486604799 = 0x1d00ffff in little-endian
-    # CScriptNum(4) = 0x04
-    script_sig = struct.pack("<I", 486604799)  # 4 bytes LE
-    script_sig += b"\x04"  # CScriptNum(4)
-    script_sig += struct.pack("<B", len(PSZ_TIMESTAMP))  # push len
-    script_sig += PSZ_TIMESTAMP
+    # n32bitVersion = nVersion(1) | nType(0) << 16 = 1, as int32 LE
+    tx += struct.pack("<i", 1)
 
-    tx += struct.pack("<B", len(script_sig))  # scriptSig length
-    tx += script_sig
+    # vin: compactSize count(1) + CTxIn
+    tx += b"\x01"  # 1 input
 
-    # vin[0].nSequence
+    # CTxIn: COutPoint + scriptSig + nSequence
+    # COutPoint: hash(32 null bytes) + n(uint32 0xffffffff)
+    tx += b"\x00" * 32
     tx += struct.pack("<I", 0xffffffff)
 
-    # vout.resize(1)
-    tx += struct.pack("<B", 1)  # 1 output
+    # scriptSig = CScript() << 486604799 << CScriptNum(4) << pszTimestamp
+    # << 486604799 (int64_t): not 0/-1/1-16, so serialize as CScriptNum then push
+    script_sig = push_data(script_num_serialize(486604799))
+    # << CScriptNum(4): getvch() = [0x04], push as vector (no OP_N shortcut for vectors)
+    script_sig += push_data(b"\x04")
+    # << pszTimestamp: push as vector
+    script_sig += push_data(PSZ_TIMESTAMP)
 
-    # vout[0].nValue = 5000000000
+    # scriptSig length (compactSize)
+    tx += bytes([len(script_sig)]) if len(script_sig) < 253 else b"\xfd" + struct.pack("<H", len(script_sig))
+    tx += script_sig
+
+    # nSequence
+    tx += struct.pack("<I", 0xffffffff)
+
+    # vout: compactSize count(1) + CTxOut
+    tx += b"\x01"  # 1 output
+
+    # CTxOut: nValue(int64 LE) + scriptPubKey
     tx += struct.pack("<q", GENESIS_REWARD)
 
-    # vout[0].scriptPubKey = CScript() << pubkey << OP_CHECKSIG
-    script_pubkey = struct.pack("<B", len(PUBKEY))  # push len
-    script_pubkey += PUBKEY
-    script_pubkey += b"\xac"  # OP_CHECKSIG
-
-    tx += struct.pack("<B", len(script_pubkey))  # scriptPubKey length
+    # scriptPubKey = CScript() << pubkey << OP_CHECKSIG
+    script_pubkey = push_data(PUBKEY) + b"\xac"  # OP_CHECKSIG = 0xac
+    tx += bytes([len(script_pubkey)]) if len(script_pubkey) < 253 else b"\xfd" + struct.pack("<H", len(script_pubkey))
     tx += script_pubkey
 
-    # vout[0].nRounds = 0 (Dash-specific, added in Dash's CTxOut serialization)
-    # Actually in Dash v18, CTxOut doesn't have nRounds in serialization for non-coinbase
-    # Let's check - Dash uses a special serialization. For genesis, it should be standard.
+    # nLockTime = 0 (uint32 LE) — THIS WAS MISSING
+    tx += struct.pack("<I", 0)
 
     return tx
+
 
 def create_block_header(merkle_root, n_time, n_nonce, n_bits, n_version):
     """Create 80-byte block header for X11 hashing."""
@@ -76,11 +136,14 @@ def create_block_header(merkle_root, n_time, n_nonce, n_bits, n_version):
     header += struct.pack("<I", n_nonce)             # nNonce
     return header
 
+
 def compute_merkle_root(tx_bytes):
     """Compute merkle root of a single transaction.
+    For a single tx, merkle root = txid = double_sha256(serialized_tx).
     Returns little-endian bytes (as stored in block header)."""
-    tx_hash = double_sha256(tx_bytes)  # big-endian
-    return tx_hash[::-1]  # reverse to little-endian for header
+    tx_hash = double_sha256(tx_bytes)
+    return tx_hash  # already in LE storage order
+
 
 def bits_to_target(bits):
     """Convert compact bits to target."""
@@ -92,6 +155,38 @@ def bits_to_target(bits):
         target = mantissa << (8 * (exponent - 3))
     return target
 
+
+def verify():
+    """Verify our serialization matches the original Dash genesis."""
+    print("=== Verifying against original Dash genesis ===")
+    coinbase_tx = create_coinbase_tx()
+    merkle_root = compute_merkle_root(coinbase_tx)
+    merkle_hex = merkle_root[::-1].hex()  # display as BE
+
+    print(f"  Coinbase TX hex: {coinbase_tx.hex()}")
+    print(f"  Computed merkle: 0x{merkle_hex}")
+    print(f"  Expected merkle: 0x{DASH_MERKLE}")
+
+    if merkle_hex != DASH_MERKLE:
+        print("  MERKLE ROOT MISMATCH!")
+        return False
+
+    header = create_block_header(merkle_root, DASH_TIME, DASH_NONCE, N_BITS, N_VERSION)
+    block_hash = x11_hash.getPoWHash(header)
+    hash_hex = block_hash[::-1].hex()
+
+    print(f"  Computed hash:   0x{hash_hex}")
+    print(f"  Expected hash:   0x{DASH_HASH}")
+
+    if hash_hex != DASH_HASH:
+        print("  HASH MISMATCH!")
+        return False
+
+    print("  ✅ Verification passed!")
+    print()
+    return True
+
+
 def main():
     print(f"Generating genesis block for Dashbase")
     print(f"  Timestamp: {N_TIME}")
@@ -100,25 +195,26 @@ def main():
     print(f"  Reward: {GENESIS_REWARD} satoshis")
     print()
 
-    # Create coinbase tx
+    # First verify against original Dash genesis
+    if not verify():
+        print("ERROR: Verification failed, aborting genesis generation")
+        sys.exit(1)
+
+    # Now generate with our timestamp
+    print(f"=== Generating genesis for Dashbase (nTime={N_TIME}) ===")
+
     coinbase_tx = create_coinbase_tx()
-    print(f"Coinbase TX: {coinbase_tx.hex()}")
-
-    # Compute merkle root
     merkle_root = compute_merkle_root(coinbase_tx)
-    print(f"Merkle Root: 0x{merkle_root[::-1].hex()}")  # display as BE
+    print(f"  Merkle Root: 0x{merkle_root[::-1].hex()}")
 
-    # Target
     target = bits_to_target(N_BITS)
     target_hex = f"{target:064x}"
-    print(f"Target:       0x{target_hex}")
+    print(f"  Target:      0x{target_hex}")
     print()
 
-    # Mine - search for nonce
     print("Mining genesis block (searching for valid nonce)...")
     start_time = time.time()
 
-    # Try nonces starting from 0
     batch_size = 100000
     nonce = 0
 
@@ -126,7 +222,6 @@ def main():
         header = create_block_header(merkle_root, N_TIME, nonce, N_BITS, N_VERSION)
         block_hash = x11_hash.getPoWHash(header)
 
-        # Check if hash < target (compare as big-endian hex)
         hash_int = int.from_bytes(block_hash, 'little')
         if hash_int < target:
             elapsed = time.time() - start_time
@@ -138,6 +233,7 @@ def main():
             print(f"  Time:         {elapsed:.1f}s")
             print()
             print(f"Add to chainparams.cpp:")
+            print(f'  genesis = CreateGenesisBlock({N_TIME}, {nonce}, 0x{N_BITS:08x}, 1, 50 * COIN);')
             print(f'  assert(consensus.hashGenesisBlock == uint256S("0x{block_hash[::-1].hex()}"));')
             print(f'  assert(genesis.hashMerkleRoot == uint256S("0x{merkle_root[::-1].hex()}"));')
             return
@@ -148,6 +244,7 @@ def main():
             elapsed = time.time() - start_time
             rate = nonce / elapsed if elapsed > 0 else 0
             print(f"\r  Tried {nonce:,} nonces ({rate:.0f} H/s)...", end="", flush=True)
+
 
 if __name__ == "__main__":
     main()
