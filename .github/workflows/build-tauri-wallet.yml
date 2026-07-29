@@ -1,0 +1,102 @@
+name: Build Tauri Wallet
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - tauri-wallet-rewrite
+  workflow_dispatch:
+
+jobs:
+  build-tauri:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos
+            runner: macos-15
+            args: '--target aarch64-apple-darwin'
+          - platform: macos-intel
+            runner: macos-15-intel
+            args: '--target x86_64-apple-darwin'
+          - platform: ubuntu
+            runner: ubuntu-22.04
+            args: ''
+          - platform: windows
+            runner: windows-latest
+            args: ''
+
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos' && 'aarch64-apple-darwin' || '' }}
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri-wallet/src-tauri -> target
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev libappindicator3-dev \
+            librsvg2-dev patchelf libssl-dev libgtk-3-dev \
+            libayatana-appindicator3-dev
+
+      - name: Install frontend dependencies
+        run: bun install
+        working-directory: src-tauri-wallet
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: src-tauri-wallet
+          tagName: ${{ github.ref_name }}
+          releaseName: 'Dashbase Wallet v__VERSION__'
+          releaseBody: 'Dashbase Wallet desktop app'
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}
+
+  release:
+    name: Attach to Release
+    needs: build-tauri
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Display structure
+        run: ls -R artifacts
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/**/*.dmg
+            artifacts/**/*.deb
+            artifacts/**/*.AppImage
+            artifacts/**/*.msi
+            artifacts/**/*.exe
+          generate_release_notes: true
+          draft: true
