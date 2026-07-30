@@ -120,14 +120,15 @@ class BLSKeyGenerator:
     3. Fallback: generate a random 32-byte private key with instructions
     """
 
-    def __init__(self, daemon_path: Optional[str] = None):
+    def __init__(self, daemon_path: Optional[str] = None, daemon_name: str = "dashbased"):
         self.daemon_path = daemon_path
+        self.daemon_name = daemon_name
 
     def _try_daemon(self) -> Optional[BLSKeyPair]:
         """Try to use the built daemon's BLS generation."""
         daemon = self.daemon_path
         if not daemon:
-            for candidate in ["./src/dashbased", "./src/mychaind", "./src/dashd"]:
+            for candidate in [f"./src/{self.daemon_name}", "./src/dashbased", "./src/dashd"]:
                 if os.path.exists(candidate):
                     daemon = candidate
                     break
@@ -188,7 +189,7 @@ class BLSKeyGenerator:
         privkey = secrets.token_bytes(32)
         return BLSKeyPair(
             privkey_hex=privkey.hex(),
-            pubkey_hex="(run: mychaind -bls generate 0x" + privkey.hex() + " to get pubkey)",
+            pubkey_hex=f"(run: {self.daemon_name} -bls generate 0x{privkey.hex()} to get pubkey)",
         )
 
     def generate(self) -> BLSKeyPair:
@@ -201,8 +202,8 @@ class BLSKeyGenerator:
         if result:
             return result
 
-        print("WARNING: Could not find BLS library or built daemon. Generating random private key.")
-        print("  You will need to derive the public key using: mychaind -bls generate 0x<privkey>")
+        print(f"WARNING: Could not find BLS library or built daemon. Generating random private key.")
+        print(f"  You will need to derive the public key using: {self.daemon_name} -bls generate 0x<privkey>")
         return self._fallback_random()
 
     def generate_conf_snippet(self, keypair: BLSKeyPair) -> str:

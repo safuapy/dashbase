@@ -570,7 +570,7 @@ def run_launch(repo_root: str, config: dict, old_config: dict = None) -> int:
     if keys_cfg.get("generate_bls_keys", False):
         print("[2/8] Generating BLS masternode operator key...")
         try:
-            bls_gen = BLSKeyGenerator()
+            bls_gen = BLSKeyGenerator(daemon_name=binaries["daemon"])
             bls_key = bls_gen.generate()
             keys_cfg["bls_keys"]["masternode_operator_priv"] = bls_key.privkey_hex
             keys_cfg["bls_keys"]["masternode_operator_pub"] = bls_key.pubkey_hex
