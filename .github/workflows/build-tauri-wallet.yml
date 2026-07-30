@@ -168,23 +168,9 @@ jobs:
           # Update tauri.conf.json to include the daemon as a resource
           if [ -f "src-tauri-wallet/src-tauri/resources/dashbased" ] || [ -f "src-tauri-wallet/src-tauri/resources/dashbased.exe" ]; then
             if [[ "${{ matrix.label }}" == "Windows" ]]; then
-              python3 -c "
-              import json
-              with open('src-tauri-wallet/src-tauri/tauri.conf.json', 'r') as f:
-                conf = json.load(f)
-              conf['bundle']['resources'] = ['resources/dashbased.exe']
-              with open('src-tauri-wallet/src-tauri/tauri.conf.json', 'w') as f:
-                json.dump(conf, f, indent=2)
-              "
+              python3 -c "import json; f=open('src-tauri-wallet/src-tauri/tauri.conf.json'); c=json.load(f); f.close(); c['bundle']['resources']=['resources/dashbased.exe']; f=open('src-tauri-wallet/src-tauri/tauri.conf.json','w'); json.dump(c,f,indent=2); f.close()"
             else
-              python3 -c "
-              import json
-              with open('src-tauri-wallet/src-tauri/tauri.conf.json', 'r') as f:
-                conf = json.load(f)
-              conf['bundle']['resources'] = ['resources/dashbased']
-              with open('src-tauri-wallet/src-tauri/tauri.conf.json', 'w') as f:
-                json.dump(conf, f, indent=2)
-              "
+              python3 -c "import json; f=open('src-tauri-wallet/src-tauri/tauri.conf.json'); c=json.load(f); f.close(); c['bundle']['resources']=['resources/dashbased']; f=open('src-tauri-wallet/src-tauri/tauri.conf.json','w'); json.dump(c,f,indent=2); f.close()"
             fi
             echo "Updated tauri.conf.json with daemon resource"
           fi
