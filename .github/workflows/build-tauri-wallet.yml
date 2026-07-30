@@ -142,10 +142,10 @@ jobs:
           fi
 
           # Also try zip for Windows
-          ZIPFILE=$(find daemon-artifacts -name "*.zip" | head -1)
+          ZIPFILE=$(find "$(pwd)/daemon-artifacts" -name "*.zip" | head -1)
           if [ -n "$ZIPFILE" ]; then
             echo "Extracting: $ZIPFILE"
-            cd daemon-artifacts && unzip -o "$ZIPFILE" && cd ..
+            unzip -o "$ZIPFILE" -d "$(pwd)/daemon-artifacts/"
           fi
 
           # Find the dashbased binary
