@@ -7,7 +7,7 @@
     "frontendDist": "../dist",
     "devUrl": "http://localhost:1420",
     "beforeDevCommand": "bun run dev",
-    "beforeBuildCommand": "bun run build"
+    "beforeBuildCommand": "bash scripts/pre-build.sh && bun run build"
   },
   "app": {
     "windows": [
@@ -28,6 +28,7 @@
   "bundle": {
     "active": true,
     "targets": ["dmg", "nsis", "deb", "appimage", "msi"],
+    "resources": [],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

@@ -26,13 +26,15 @@ const navItems = [
 ];
 
 export function AppLayout() {
-  const { connected, balance, blockchainInfo, refresh, loading, error } = useWalletStore();
+  const { connected, balance, blockchainInfo, refresh, loading, error, daemonStatus, checkDaemon } = useWalletStore();
 
   useEffect(() => {
+    checkDaemon();
     refresh();
     const interval = setInterval(refresh, 15000);
-    return () => clearInterval(interval);
-  }, [refresh]);
+    const daemonInterval = setInterval(checkDaemon, 5000);
+    return () => { clearInterval(interval); clearInterval(daemonInterval); };
+  }, [refresh, checkDaemon]);
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[var(--color-bg)]">
@@ -88,23 +90,26 @@ export function AppLayout() {
                 "h-2 w-2 rounded-full",
                 connected
                   ? "bg-green-400 pulse-glow"
-                  : "bg-red-400"
+                  : daemonStatus.includes("running") || daemonStatus.includes("starting")
+                    ? "bg-amber-400 animate-pulse"
+                    : "bg-red-400"
               )}
             />
             {connected ? (
               <span className="text-[var(--color-text-muted)]">Connected</span>
+            ) : daemonStatus.includes("running") ? (
+              <span className="text-[var(--color-text-muted)]">Daemon starting…</span>
+            ) : daemonStatus.includes("starting") ? (
+              <span className="text-[var(--color-text-muted)]">Starting daemon…</span>
             ) : (
               <span className="text-[var(--color-text-muted)]">Disconnected</span>
             )}
-            {error && !connected && (
-              <span
-                className="text-[var(--color-text-dim)] truncate"
-                title={error}
-              >
-                · {error}
-              </span>
-            )}
           </div>
+          {error && !connected && !daemonStatus.includes("running") && (
+            <div className="mt-1.5 text-xs text-[var(--color-text-dim)] truncate" title={error}>
+              {error}
+            </div>
+          )}
           {blockchainInfo && (
             <div className="mt-1.5 text-xs text-[var(--color-text-dim)]">
               Block {blockchainInfo.blocks.toLocaleString()}

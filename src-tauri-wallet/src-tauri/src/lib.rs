@@ -1,5 +1,6 @@
 mod config;
 mod rpc;
+mod daemon;
 
 use serde::{Deserialize, Serialize};
 
@@ -566,6 +567,28 @@ async fn get_wallet_info() -> Result<serde_json::Value, String> {
     Ok(result)
 }
 
+// ── Daemon management commands ──
+
+#[tauri::command]
+fn start_daemon() -> Result<String, String> {
+    daemon::start_daemon()
+}
+
+#[tauri::command]
+fn stop_daemon() -> Result<String, String> {
+    daemon::stop_daemon()
+}
+
+#[tauri::command]
+fn daemon_status() -> String {
+    daemon::daemon_status()
+}
+
+#[tauri::command]
+fn get_data_dir() -> String {
+    daemon::data_dir().display().to_string()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -573,6 +596,11 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .setup(|_app| {
+            // Try to start bundled daemon on launch
+            match daemon::start_daemon() {
+                Ok(msg) => println!("[daemon] {}", msg),
+                Err(e) => eprintln!("[daemon] Failed to auto-start: {} (user may have external daemon)", e),
+            }
             tauri::async_runtime::block_on(async {
                 config::init_config().await;
             });
@@ -607,6 +635,10 @@ pub fn run() {
             get_mining_info,
             get_network_info,
             get_wallet_info,
+            start_daemon,
+            stop_daemon,
+            daemon_status,
+            get_data_dir,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

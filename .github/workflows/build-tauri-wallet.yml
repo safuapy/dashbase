@@ -16,7 +16,34 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Wait for daemon build artifacts to be available
+  build-daemon:
+    name: Trigger daemon build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger daemon build workflow
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Trigger the build-wallets workflow and wait for it
+            const { data: workflow } = await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'build-wallets.yml',
+              ref: context.ref,
+            });
+            console.log('Triggered build-wallets workflow run:', workflow.id);
+
+      - name: Wait for daemon build to complete
+        uses: lewagon/wait-on-check-action@v1.3.4
+        with:
+          ref: ${{ github.ref }}
+          check-name: 'Build linux-daemon'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 30
+
   build:
+    needs: build-daemon
     strategy:
       fail-fast: false
       matrix:
@@ -86,6 +113,92 @@ jobs:
       - name: Install frontend dependencies
         run: bun install
         working-directory: src-tauri-wallet
+
+      - name: Download daemon binary
+        shell: bash
+        run: |
+          mkdir -p src-tauri-wallet/src-tauri/resources
+          # Try to download daemon artifact from the latest successful build-wallets run
+          DAEMON_ARTIFACT=""
+          if [[ "${{ matrix.label }}" == "macOS-ARM" ]]; then
+            DAEMON_ARTIFACT="dashcore-macos-intel"
+          elif [[ "${{ matrix.label }}" == "macOS-Intel" ]]; then
+            DAEMON_ARTIFACT="dashcore-macos-intel"
+          elif [[ "${{ matrix.label }}" == "Linux" ]]; then
+            DAEMON_ARTIFACT="dashcore-linux-daemon"
+          elif [[ "${{ matrix.label }}" == "Windows" ]]; then
+            DAEMON_ARTIFACT="dashcore-windows"
+          fi
+
+          echo "Downloading daemon artifact: $DAEMON_ARTIFACT"
+
+          # Use GitHub CLI to download the latest artifact
+          if gh run download -n "$DAEMON_ARTIFACT" -D daemon-artifacts --repo ${{ github.repository }} 2>/dev/null; then
+            echo "Downloaded daemon artifacts"
+            ls -la daemon-artifacts/ || true
+
+            # Find and extract the daemon tarball
+            TARBALL=$(find daemon-artifacts -name "*.tar.gz" | head -1)
+            if [ -n "$TARBALL" ]; then
+              echo "Extracting: $TARBALL"
+              tar -xzf "$TARBALL" -C daemon-artifacts/
+              # Find the dashbased binary
+              DAEMON_BIN=$(find daemon-artifacts -name "dashbased" -o -name "dashbased.exe" | head -1)
+              if [ -n "$DAEMON_BIN" ]; then
+                echo "Found daemon binary: $DAEMON_BIN"
+                if [[ "${{ matrix.label }}" == "Windows" ]]; then
+                  cp "$DAEMON_BIN" src-tauri-wallet/src-tauri/resources/dashbased.exe
+                else
+                  cp "$DAEMON_BIN" src-tauri-wallet/src-tauri/resources/dashbased
+                  chmod +x src-tauri-wallet/src-tauri/resources/dashbased
+                fi
+                echo "Daemon binary placed in resources/"
+              fi
+            fi
+
+            # Also try zip for Windows
+            ZIPFILE=$(find daemon-artifacts -name "*.zip" | head -1)
+            if [ -n "$ZIPFILE" ] && [ ! -f "src-tauri-wallet/src-tauri/resources/dashbased.exe" ]; then
+              echo "Extracting: $ZIPFILE"
+              cd daemon-artifacts && unzip -o "$ZIPFILE" && cd ..
+              DAEMON_BIN=$(find daemon-artifacts -name "dashbased.exe" | head -1)
+              if [ -n "$DAEMON_BIN" ]; then
+                cp "$DAEMON_BIN" src-tauri-wallet/src-tauri/resources/dashbased.exe
+                echo "Windows daemon binary placed in resources/"
+              fi
+            fi
+          else
+            echo "Could not download daemon artifact. Building without bundled daemon."
+            echo "The wallet will still work if dashbased is installed in PATH."
+          fi
+
+          ls -la src-tauri-wallet/src-tauri/resources/ || true
+
+          # Update tauri.conf.json to include the daemon as a resource
+          if [ -f "src-tauri-wallet/src-tauri/resources/dashbased" ] || [ -f "src-tauri-wallet/src-tauri/resources/dashbased.exe" ]; then
+            if [[ "${{ matrix.label }}" == "Windows" ]]; then
+              python3 -c "
+              import json
+              with open('src-tauri-wallet/src-tauri/tauri.conf.json', 'r') as f:
+                conf = json.load(f)
+              conf['bundle']['resources'] = ['resources/dashbased.exe']
+              with open('src-tauri-wallet/src-tauri/tauri.conf.json', 'w') as f:
+                json.dump(conf, f, indent=2)
+              "
+            else
+              python3 -c "
+              import json
+              with open('src-tauri-wallet/src-tauri/tauri.conf.json', 'r') as f:
+                conf = json.load(f)
+              conf['bundle']['resources'] = ['resources/dashbased']
+              with open('src-tauri-wallet/src-tauri/tauri.conf.json', 'w') as f:
+                json.dump(conf, f, indent=2)
+              "
+            fi
+            echo "Updated tauri.conf.json with daemon resource"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0

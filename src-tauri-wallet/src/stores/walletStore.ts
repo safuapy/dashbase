@@ -96,6 +96,8 @@ interface WalletState {
   connected: boolean;
   loading: boolean;
   error: string | null;
+  daemonStatus: string;
+  dataDir: string;
   balance: WalletBalance | null;
   blockchainInfo: BlockchainInfo | null;
   transactions: Transaction[];
@@ -107,6 +109,9 @@ interface WalletState {
   refresh: () => Promise<void>;
   refreshMasternodes: () => Promise<void>;
   refreshProposals: () => Promise<void>;
+  startDaemon: () => Promise<void>;
+  stopDaemon: () => Promise<void>;
+  checkDaemon: () => Promise<void>;
   sendToAddress: (
     address: string,
     amount: number,
@@ -139,6 +144,8 @@ export const useWalletStore = create<WalletState>((set) => ({
   connected: false,
   loading: false,
   error: null,
+  daemonStatus: "unknown",
+  dataDir: "",
   balance: null,
   blockchainInfo: null,
   transactions: [],
@@ -213,6 +220,34 @@ export const useWalletStore = create<WalletState>((set) => ({
 
   backupWallet: async (dest) => {
     await invoke("backup_wallet", { dest });
+  },
+
+  startDaemon: async () => {
+    try {
+      await invoke("start_daemon");
+      set({ daemonStatus: "starting" });
+    } catch (err) {
+      console.error("[walletStore] startDaemon failed:", err);
+    }
+  },
+
+  stopDaemon: async () => {
+    try {
+      await invoke("stop_daemon");
+      set({ daemonStatus: "stopped", connected: false });
+    } catch (err) {
+      console.error("[walletStore] stopDaemon failed:", err);
+    }
+  },
+
+  checkDaemon: async () => {
+    try {
+      const status = await invoke<string>("daemon_status");
+      const dataDir = await invoke<string>("get_data_dir");
+      set({ daemonStatus: status, dataDir });
+    } catch (err) {
+      console.error("[walletStore] checkDaemon failed:", err);
+    }
   },
 
   refreshMasternodes: async () => {
