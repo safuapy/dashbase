@@ -1,5 +1,5 @@
 {
-  "_comment": "Chain brand configuration for Dash Core fork. Edit these values to customize your chain identity. The scripts/new-fork.sh script reads this file and applies all branding/chain parameter changes across the codebase.",
+  "_comment": "Chain brand configuration. Edit these values to customize your chain. Run: python3 scripts/launch_chain.py --config chainbrand.json",
 
   "chain": {
     "name": "Dashbase",
@@ -32,11 +32,14 @@
       },
       "genesis": {
         "timestamp": 1753734000,
-        "nonce": 0,
+        "nonce": 961483,
         "bits": 486604768,
         "version": 1,
         "reward": 5000000000,
-        "_comment_hash": "Must be recalculated after changing genesis parameters — run genesis generation utility"
+        "psz_timestamp": "Wired 09/Jan/2014 The Grand Experiment Goes Live: Overstock.com Is Now Accepting Bitcoins",
+        "pubkey_hex": "040184710fa689ad5023690c80f3a49c8f13f8d45b8c857fbcbc8bc4a8e4d3eb4b10f4d4604fa08dce601aaf0f470216fe1b51850b4acf21b179c45070ac7b03a9",
+        "hash": "00000872de437c3605386676ec196376df3c12f53ccdc0f8f7d5aa67ad883a71",
+        "merkle_root": "e0028eb9648db56b1ac77cf090b99048a8007e2bb64b68f092c03c7f56a662c7"
       },
       "checkpoints": [],
       "minimum_chain_work": "0x0000000000000000000000000000000000000000000000000000000000000000",
@@ -58,12 +61,15 @@
         "ext_secret_key": [4, 136, 173, 228]
       },
       "genesis": {
-        "timestamp": 1753734000,
-        "nonce": 0,
+        "timestamp": 1753734001,
+        "nonce": 1340636,
         "bits": 486604768,
         "version": 1,
         "reward": 5000000000,
-        "_comment_hash": "Must be recalculated after changing genesis parameters"
+        "psz_timestamp": "Wired 09/Jan/2014 The Grand Experiment Goes Live: Overstock.com Is Now Accepting Bitcoins",
+        "pubkey_hex": "040184710fa689ad5023690c80f3a49c8f13f8d45b8c857fbcbc8bc4a8e4d3eb4b10f4d4604fa08dce601aaf0f470216fe1b51850b4acf21b179c45070ac7b03a9",
+        "hash": "000005776e75d3d6325b324c553e92aff7818ad6322072b168d5ce73f8e4332e",
+        "merkle_root": "e0028eb9648db56b1ac77cf090b99048a8007e2bb64b68f092c03c7f56a662c7"
       },
       "checkpoints": []
     },
@@ -83,9 +89,115 @@
     }
   },
 
+  "consensus": {
+    "mainnet": {
+      "subsidy_halving_interval": 210000,
+      "pow_target_spacing": 120,
+      "pow_target_timespan": 86400,
+      "pow_limit": "00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "masternode_payments_start_block": 0,
+      "masternode_payments_increase_block": 0,
+      "masternode_payments_increase_period": 1,
+      "instant_send_confirmations_required": 6,
+      "instant_send_keep_lock": 24,
+      "budget_payments_start_block": 0,
+      "budget_payments_cycle_blocks": 10080,
+      "budget_payments_window_blocks": 100,
+      "superblock_start_block": 10080,
+      "superblock_cycle": 10080,
+      "superblock_maturity_window": 1440,
+      "governance_min_quorum": 10,
+      "governance_filter_elements": 20000,
+      "masternode_minimum_confirmations": 15,
+      "bip34_height": 1,
+      "bip65_height": 1,
+      "bip66_height": 1,
+      "dip0001_height": 1,
+      "dip0003_height": 1,
+      "dip0003_enforcement_height": 1,
+      "dip0008_height": 1,
+      "brr_height": 1,
+      "rule_change_activation_threshold": 1512,
+      "miner_confirmation_window": 720,
+      "deployments": {
+        "TESTDUMMY": {"bit": 28, "start_time": 0, "timeout": 999999999999},
+        "CSV": {"bit": 0, "start_time": 0, "timeout": 999999999999},
+        "DIP0001": {"bit": 1, "start_time": 0, "timeout": 999999999999, "window_size": 4032, "threshold_start": 3226},
+        "BIP147": {"bit": 2, "start_time": 0, "timeout": 999999999999, "window_size": 4032, "threshold_start": 3226},
+        "DIP0003": {"bit": 3, "start_time": 0, "timeout": 999999999999, "window_size": 4032, "threshold_start": 3226},
+        "DIP0008": {"bit": 4, "start_time": 0, "timeout": 999999999999, "window_size": 4032, "threshold_start": 3226},
+        "REALLOC": {"bit": 5, "start_time": 0, "timeout": 999999999999, "window_size": 4032, "threshold_start": 3226, "threshold_min": 2420, "falloff_coeff": 5},
+        "DIP0020": {"bit": 6, "start_time": 0, "timeout": 999999999999, "window_size": 4032, "threshold_start": 3226, "threshold_min": 2420, "falloff_coeff": 5},
+        "DIP0024": {"bit": 7, "start_time": 0, "timeout": 999999999999, "window_size": 4032, "threshold_start": 3226, "threshold_min": 2420, "falloff_coeff": 5}
+      },
+      "llmq_chainlocks": "LLMQ_400_60",
+      "llmq_instant_send": "LLMQ_50_60",
+      "llmq_dip0024_instant_send": "LLMQ_60_75",
+      "llmq_mnhf": "LLMQ_400_85"
+    },
+    "testnet": {
+      "subsidy_halving_interval": 210000,
+      "pow_target_spacing": 120,
+      "pow_target_timespan": 86400,
+      "pow_limit": "00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "masternode_payments_start_block": 0,
+      "masternode_payments_increase_block": 0,
+      "masternode_payments_increase_period": 10,
+      "instant_send_confirmations_required": 2,
+      "instant_send_keep_lock": 6,
+      "budget_payments_start_block": 0,
+      "budget_payments_cycle_blocks": 50,
+      "budget_payments_window_blocks": 10,
+      "superblock_start_block": 50,
+      "superblock_cycle": 50,
+      "superblock_maturity_window": 50,
+      "governance_min_quorum": 1,
+      "governance_filter_elements": 500,
+      "masternode_minimum_confirmations": 1,
+      "bip34_height": 1,
+      "bip65_height": 1,
+      "bip66_height": 1,
+      "dip0001_height": 1,
+      "dip0003_height": 1,
+      "dip0003_enforcement_height": 1,
+      "dip0008_height": 1,
+      "brr_height": 1,
+      "rule_change_activation_threshold": 1512,
+      "miner_confirmation_window": 720,
+      "deployments": {
+        "TESTDUMMY": {"bit": 28, "start_time": 1199145601, "timeout": 1230767999},
+        "CSV": {"bit": 0, "start_time": 0, "timeout": 999999999999},
+        "DIP0001": {"bit": 1, "start_time": 0, "timeout": 999999999999, "window_size": 100, "threshold_start": 50},
+        "BIP147": {"bit": 2, "start_time": 0, "timeout": 999999999999, "window_size": 100, "threshold_start": 50},
+        "DIP0003": {"bit": 3, "start_time": 0, "timeout": 999999999999, "window_size": 100, "threshold_start": 50},
+        "DIP0008": {"bit": 4, "start_time": 0, "timeout": 999999999999, "window_size": 100, "threshold_start": 50},
+        "REALLOC": {"bit": 5, "start_time": 0, "timeout": 999999999999, "window_size": 100, "threshold_start": 80, "threshold_min": 60, "falloff_coeff": 5},
+        "DIP0020": {"bit": 6, "start_time": 0, "timeout": 999999999999, "window_size": 100, "threshold_start": 80, "threshold_min": 60, "falloff_coeff": 5},
+        "DIP0024": {"bit": 7, "start_time": 0, "timeout": 999999999999, "window_size": 100, "threshold_start": 80, "threshold_min": 60, "falloff_coeff": 5}
+      },
+      "llmq_chainlocks": "LLMQ_50_60",
+      "llmq_instant_send": "LLMQ_50_60",
+      "llmq_dip0024_instant_send": "LLMQ_60_75",
+      "llmq_mnhf": "LLMQ_50_60"
+    }
+  },
+
+  "keys": {
+    "generate_spork_keys": false,
+    "generate_bls_keys": false,
+    "spork_keys": {
+      "mainnet": {"address": "", "wif": ""},
+      "testnet": {"address": "", "wif": ""}
+    },
+    "bls_keys": {
+      "masternode_operator_priv": "",
+      "masternode_operator_pub": ""
+    }
+  },
+
   "binaries": {
     "daemon": "dashbased",
-    "qt": "dashbase-qt",
+    "qt": "dash-qt",
     "cli": "dashbase-cli",
     "tx": "dashbase-tx",
     "wallet": "dashbase-wallet",
@@ -106,20 +218,40 @@
   },
 
   "gui": {
-    "organization_name": "Dashbase Project",
+    "organization_name": "Dashbase",
     "organization_domain": "dashbase.org",
     "application_name_mainnet": "Dashbase-Qt",
     "application_name_testnet": "Dashbase-Qt-testnet",
     "application_name_regtest": "Dashbase-Qt-regtest"
   },
 
+  "docker": {
+    "image_name": "safuapy/dashbased",
+    "user_name": "dashbase",
+    "data_dir": ".dashbase"
+  },
+
+  "options": {
+    "mine_genesis": false,
+    "clear_checkpoints": true,
+    "clear_fixed_seeds": true,
+    "patch_docker": true,
+    "patch_ci": true,
+    "patch_nsis": true,
+    "patch_windows_resources": true,
+    "verify_after_patch": true,
+    "git_commit": false,
+    "git_commit_message": "feat: customize chain for {chain_name}"
+  },
+
   "_instructions": [
     "1. Edit all values above to customize your chain.",
-    "2. Generate a new genesis block hash by modifying the genesis timestamp/nonce.",
-    "3. Run scripts/new-fork.sh to apply branding across the codebase.",
-    "4. Clear checkpoints and fixed seeds for a fresh chain.",
-    "5. Recalculate minimum_chain_work and default_assume_valid after genesis is set.",
-    "6. Update DNS seeds to point to your own seed nodes.",
-    "7. Choose unique magic_bytes to avoid collision with other chains."
+    "2. Run: python3 scripts/launch_chain.py --config chainbrand.json",
+    "3. Or run interactively: python3 scripts/launch_chain.py",
+    "4. Generate a template config: python3 scripts/launch_chain.py --generate-config > chainbrand.json",
+    "5. Choose unique magic_bytes to avoid collision with other chains.",
+    "6. Set mine_genesis=true to mine new genesis blocks (requires x11_hash module).",
+    "7. Set generate_spork_keys=true to generate new spork signing keys.",
+    "8. After launch, add seed nodes to src/chainparamsseeds.h and checkpoints to src/chainparams.cpp."
   ]
 }
