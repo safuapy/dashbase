@@ -17,14 +17,19 @@ pub fn data_dir() -> PathBuf {
 }
 
 fn find_bundled_daemon(resource_dir: Option<PathBuf>) -> Option<PathBuf> {
-    let mut candidates: Vec<Option<PathBuf>> = vec![
-        // Tauri resource_dir (passed from app handle)
-        resource_dir,
-        // macOS .app bundle: Contents/Resources/dashbased
+    let candidates: Vec<Option<PathBuf>> = vec![
+        // Tauri resource_dir/resources/dashbased (Tauri preserves folder structure)
+        resource_dir.as_ref().map(|rd| rd.join("resources").join("dashbased")),
+        resource_dir.as_ref().map(|rd| rd.join("resources").join("dashbased.exe")),
+        // macOS .app bundle: Contents/Resources/resources/dashbased
+        std::env::current_exe().ok()
+            .and_then(|p| p.parent().and_then(|d| d.parent())
+                .map(|d| d.join("Resources").join("resources").join("dashbased"))),
+        // macOS .app bundle: Contents/Resources/dashbased (fallback)
         std::env::current_exe().ok()
             .and_then(|p| p.parent().and_then(|d| d.parent())
                 .map(|d| d.join("Resources").join("dashbased"))),
-        // macOS Frameworks dir (sometimes resources land here)
+        // macOS Frameworks dir
         std::env::current_exe().ok()
             .and_then(|p| p.parent().and_then(|d| d.parent())
                 .map(|d| d.join("Frameworks").join("dashbased"))),
@@ -37,13 +42,6 @@ fn find_bundled_daemon(resource_dir: Option<PathBuf>) -> Option<PathBuf> {
         // System PATH
         which::which("dashbased").ok(),
     ];
-
-    // Also check for .exe variants in resource_dir
-    if let Some(rd) = &candidates[0] {
-        let rd = rd.clone();
-        candidates.push(Some(rd.join("dashbased.exe")));
-        candidates.push(Some(rd.join("dashbased")));
-    }
 
     for candidate in candidates.iter().flatten() {
         if candidate.exists() {
