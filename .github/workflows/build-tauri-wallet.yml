@@ -218,3 +218,17 @@ jobs:
         with:
           projectPath: src-tauri-wallet
           args: --target ${{ matrix.target }}
+
+      - name: Upload build artifacts
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: dashbase-wallet-${{ matrix.label }}
+          path: |
+            src-tauri-wallet/src-tauri/target/*/release/bundle/**/*.dmg
+            src-tauri-wallet/src-tauri/target/*/release/bundle/**/*.msi
+            src-tauri-wallet/src-tauri/target/*/release/bundle/**/*.exe
+            src-tauri-wallet/src-tauri/target/*/release/bundle/**/*.deb
+            src-tauri-wallet/src-tauri/target/*/release/bundle/**/*.AppImage
+          if-no-files-found: warn
+          retention-days: 30
