@@ -16,23 +16,34 @@ pub fn data_dir() -> PathBuf {
     }
 }
 
-fn find_bundled_daemon() -> Option<PathBuf> {
-    let candidates = [
-        // Tauri resource dir (bundled via tauri.conf.json resources)
-        std::env::current_exe().ok()
-            .and_then(|p| p.parent().map(|d| d.join("dashbased"))),
-        std::env::current_exe().ok()
-            .and_then(|p| p.parent().map(|d| d.join("Resources").join("dashbased"))),
-        // macOS .app bundle
+fn find_bundled_daemon(resource_dir: Option<PathBuf>) -> Option<PathBuf> {
+    let mut candidates: Vec<Option<PathBuf>> = vec![
+        // Tauri resource_dir (passed from app handle)
+        resource_dir,
+        // macOS .app bundle: Contents/Resources/dashbased
         std::env::current_exe().ok()
             .and_then(|p| p.parent().and_then(|d| d.parent())
                 .map(|d| d.join("Resources").join("dashbased"))),
-        // Next to the executable (dev mode)
+        // macOS Frameworks dir (sometimes resources land here)
+        std::env::current_exe().ok()
+            .and_then(|p| p.parent().and_then(|d| d.parent())
+                .map(|d| d.join("Frameworks").join("dashbased"))),
+        // Next to the executable
         std::env::current_exe().ok()
             .and_then(|p| p.parent().map(|d| d.join("dashbased"))),
+        // Windows: same dir as exe
+        std::env::current_exe().ok()
+            .and_then(|p| p.parent().map(|d| d.join("dashbased.exe"))),
         // System PATH
         which::which("dashbased").ok(),
     ];
+
+    // Also check for .exe variants in resource_dir
+    if let Some(rd) = &candidates[0] {
+        let rd = rd.clone();
+        candidates.push(Some(rd.join("dashbased.exe")));
+        candidates.push(Some(rd.join("dashbased")));
+    }
 
     for candidate in candidates.iter().flatten() {
         if candidate.exists() {
@@ -110,7 +121,7 @@ shrinkdebuglog=1
     (user, pass, port)
 }
 
-pub fn start_daemon() -> Result<String, String> {
+pub fn start_daemon(resource_dir: Option<PathBuf>) -> Result<String, String> {
     // Check if daemon is already running (by trying to connect)
     // If we already have a child process, don't start another
     {
@@ -120,7 +131,7 @@ pub fn start_daemon() -> Result<String, String> {
         }
     }
 
-    let daemon_path = find_bundled_daemon()
+    let daemon_path = find_bundled_daemon(resource_dir)
         .ok_or_else(|| "dashbased binary not found. Place it in the app's Resources directory or install it in PATH.".to_string())?;
 
     let dd = data_dir();

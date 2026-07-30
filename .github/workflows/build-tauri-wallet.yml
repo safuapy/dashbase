@@ -89,11 +89,12 @@ jobs:
         working-directory: src-tauri-wallet
 
       - name: Download daemon binary
-        continue-on-error: true
         shell: bash
         run: |
+          set -e
           mkdir -p src-tauri-wallet/src-tauri/resources
-          # Try to download daemon artifact from the latest successful build-wallets run
+
+          # Map matrix label to daemon artifact name
           DAEMON_ARTIFACT=""
           if [[ "${{ matrix.label }}" == "macOS-ARM" ]]; then
             DAEMON_ARTIFACT="dashcore-macos-intel"
@@ -105,49 +106,64 @@ jobs:
             DAEMON_ARTIFACT="dashcore-windows"
           fi
 
-          echo "Downloading daemon artifact: $DAEMON_ARTIFACT"
+          echo "Looking for daemon artifact: $DAEMON_ARTIFACT"
 
-          # Use GitHub CLI to download the latest artifact
-          if gh run download -n "$DAEMON_ARTIFACT" -D daemon-artifacts --repo ${{ github.repository }} 2>/dev/null; then
-            echo "Downloaded daemon artifacts"
-            ls -la daemon-artifacts/ || true
+          # Find the latest successful build-wallets run on any branch
+          DAEMON_RUN_ID=$(gh run list \
+            --repo ${{ github.repository }} \
+            --workflow build-wallets.yml \
+            --status success \
+            --limit 5 \
+            --json databaseId,headBranch \
+            --jq '.[0].databaseId')
 
-            # Find and extract the daemon tarball
-            TARBALL=$(find daemon-artifacts -name "*.tar.gz" | head -1)
-            if [ -n "$TARBALL" ]; then
-              echo "Extracting: $TARBALL"
-              tar -xzf "$TARBALL" -C daemon-artifacts/
-              # Find the dashbased binary
-              DAEMON_BIN=$(find daemon-artifacts -name "dashbased" -o -name "dashbased.exe" | head -1)
-              if [ -n "$DAEMON_BIN" ]; then
-                echo "Found daemon binary: $DAEMON_BIN"
-                if [[ "${{ matrix.label }}" == "Windows" ]]; then
-                  cp "$DAEMON_BIN" src-tauri-wallet/src-tauri/resources/dashbased.exe
-                else
-                  cp "$DAEMON_BIN" src-tauri-wallet/src-tauri/resources/dashbased
-                  chmod +x src-tauri-wallet/src-tauri/resources/dashbased
-                fi
-                echo "Daemon binary placed in resources/"
-              fi
-            fi
-
-            # Also try zip for Windows
-            ZIPFILE=$(find daemon-artifacts -name "*.zip" | head -1)
-            if [ -n "$ZIPFILE" ] && [ ! -f "src-tauri-wallet/src-tauri/resources/dashbased.exe" ]; then
-              echo "Extracting: $ZIPFILE"
-              cd daemon-artifacts && unzip -o "$ZIPFILE" && cd ..
-              DAEMON_BIN=$(find daemon-artifacts -name "dashbased.exe" | head -1)
-              if [ -n "$DAEMON_BIN" ]; then
-                cp "$DAEMON_BIN" src-tauri-wallet/src-tauri/resources/dashbased.exe
-                echo "Windows daemon binary placed in resources/"
-              fi
-            fi
-          else
-            echo "Could not download daemon artifact. Building without bundled daemon."
-            echo "The wallet will still work if dashbased is installed in PATH."
+          if [ -z "$DAEMON_RUN_ID" ]; then
+            echo "ERROR: No successful build-wallets run found. Cannot bundle daemon."
+            echo "Falling back to PATH lookup — wallet will need external dashbased."
+            exit 0
           fi
 
-          ls -la src-tauri-wallet/src-tauri/resources/ || true
+          echo "Found daemon build run: $DAEMON_RUN_ID"
+
+          # Download the specific artifact from that run
+          gh run download "$DAEMON_RUN_ID" \
+            -n "$DAEMON_ARTIFACT" \
+            -D daemon-artifacts \
+            --repo ${{ github.repository }}
+
+          echo "Downloaded daemon artifacts:"
+          ls -la daemon-artifacts/ || true
+
+          # Find and extract the daemon tarball
+          TARBALL=$(find daemon-artifacts -name "*.tar.gz" | head -1)
+          if [ -n "$TARBALL" ]; then
+            echo "Extracting: $TARBALL"
+            tar -xzf "$TARBALL" -C daemon-artifacts/
+          fi
+
+          # Also try zip for Windows
+          ZIPFILE=$(find daemon-artifacts -name "*.zip" | head -1)
+          if [ -n "$ZIPFILE" ]; then
+            echo "Extracting: $ZIPFILE"
+            cd daemon-artifacts && unzip -o "$ZIPFILE" && cd ..
+          fi
+
+          # Find the dashbased binary
+          DAEMON_BIN=$(find daemon-artifacts -name "dashbased" -o -name "dashbased.exe" | head -1)
+          if [ -z "$DAEMON_BIN" ]; then
+            echo "ERROR: dashbased binary not found in artifact"
+            exit 1
+          fi
+
+          echo "Found daemon binary: $DAEMON_BIN"
+          if [[ "${{ matrix.label }}" == "Windows" ]]; then
+            cp "$DAEMON_BIN" src-tauri-wallet/src-tauri/resources/dashbased.exe
+          else
+            cp "$DAEMON_BIN" src-tauri-wallet/src-tauri/resources/dashbased
+            chmod +x src-tauri-wallet/src-tauri/resources/dashbased
+          fi
+          echo "Daemon binary placed in resources/"
+          ls -la src-tauri-wallet/src-tauri/resources/
 
           # Update tauri.conf.json to include the daemon as a resource
           if [ -f "src-tauri-wallet/src-tauri/resources/dashbased" ] || [ -f "src-tauri-wallet/src-tauri/resources/dashbased.exe" ]; then

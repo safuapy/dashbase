@@ -2,6 +2,7 @@ mod config;
 mod rpc;
 mod daemon;
 
+use tauri::Manager;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -567,11 +568,17 @@ async fn get_wallet_info() -> Result<serde_json::Value, String> {
     Ok(result)
 }
 
+use std::sync::Mutex;
+use std::path::PathBuf;
+
+static RESOURCE_DIR: Mutex<Option<PathBuf>> = Mutex::new(None);
+
 // ── Daemon management commands ──
 
 #[tauri::command]
 fn start_daemon() -> Result<String, String> {
-    daemon::start_daemon()
+    let rd = RESOURCE_DIR.lock().unwrap().clone();
+    daemon::start_daemon(rd)
 }
 
 #[tauri::command]
@@ -595,9 +602,15 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_clipboard_manager::init())
-        .setup(|_app| {
+        .setup(|app| {
+            // Get the resource directory from Tauri's app handle
+            let resource_dir = app.path().resource_dir().ok();
+            {
+                let mut rd = RESOURCE_DIR.lock().unwrap();
+                *rd = resource_dir.clone();
+            }
             // Try to start bundled daemon on launch
-            match daemon::start_daemon() {
+            match daemon::start_daemon(resource_dir) {
                 Ok(msg) => println!("[daemon] {}", msg),
                 Err(e) => eprintln!("[daemon] Failed to auto-start: {} (user may have external daemon)", e),
             }
