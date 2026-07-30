@@ -547,6 +547,7 @@ def run_launch(repo_root: str, config: dict, old_config: dict = None) -> int:
 
     # ── Step 1: Generate keys ────────────────────────────────────────
     keys_cfg = config.get("keys", {})
+    binaries = config.get("binaries", {})
     if keys_cfg.get("generate_spork_keys", False):
         print("[1/8] Generating spork keys...")
         try:
