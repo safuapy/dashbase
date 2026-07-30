@@ -40,6 +40,7 @@ from lib.docker_ci import apply_docker_ci
 from lib.verifier import verify_all
 from lib.genesis import GenesisGenerator
 from lib.keys import SporkKeyGenerator, BLSKeyGenerator
+from lib.generate import generate_all_network_params
 from lib.file_patcher import read_file, write_file, PatchResult
 
 
@@ -190,6 +191,7 @@ def generate_default_config() -> dict:
         },
 
         "options": {
+            "auto_generate_network": False,
             "mine_genesis": False,
             "clear_checkpoints": True,
             "clear_fixed_seeds": True,
@@ -368,32 +370,69 @@ def run_wizard() -> dict:
     print()
 
     # ── Network ──────────────────────────────────────────────────────
-    print("--- Network (Mainnet) ---")
-    config["network"]["mainnet"]["magic_bytes"] = [
-        int(x, 0) for x in _prompt_list(
-            "Magic bytes (4 comma-separated hex or decimal)",
-            config["network"]["mainnet"]["magic_bytes"]
+    print("--- Network ---")
+    auto_net = _prompt_bool("Auto-generate all network params (magic bytes, ports, base58, BIP44)?", True)
+    if auto_net:
+        print("  Generating unique network parameters...")
+        net_params = generate_all_network_params(
+            chain_name=config["chain"]["name"],
+            existing_mainnet=config["network"].get("mainnet", {}),
+            existing_testnet=config["network"].get("testnet", {}),
         )
-    ]
-    config["network"]["mainnet"]["default_port"] = _prompt_int("P2P port", config["network"]["mainnet"]["default_port"])
-    config["network"]["mainnet"]["rpc_port"] = _prompt_int("RPC port", config["network"]["mainnet"]["rpc_port"])
-    config["network"]["mainnet"]["dns_seeds"] = _prompt_list("DNS seeds (comma-separated)", config["network"]["mainnet"]["dns_seeds"])
-    config["network"]["mainnet"]["bip44_coin_type"] = _prompt_int("BIP44 coin type", config["network"]["mainnet"]["bip44_coin_type"])
-    config["network"]["mainnet"]["base58_prefixes"]["pubkey_address"] = _prompt_int("Base58 pubkey address prefix", config["network"]["mainnet"]["base58_prefixes"]["pubkey_address"])
-    config["network"]["mainnet"]["base58_prefixes"]["script_address"] = _prompt_int("Base58 script address prefix", config["network"]["mainnet"]["base58_prefixes"]["script_address"])
-    config["network"]["mainnet"]["base58_prefixes"]["secret_key"] = _prompt_int("Base58 secret key prefix", config["network"]["mainnet"]["base58_prefixes"]["secret_key"])
-    print()
+        # Mainnet
+        config["network"]["mainnet"]["magic_bytes"] = net_params["mainnet"]["magic_bytes"]
+        config["network"]["mainnet"]["default_port"] = net_params["mainnet"]["default_port"]
+        config["network"]["mainnet"]["rpc_port"] = net_params["mainnet"]["rpc_port"]
+        config["network"]["mainnet"]["bip44_coin_type"] = net_params["mainnet"]["bip44_coin_type"]
+        config["network"]["mainnet"]["base58_prefixes"]["pubkey_address"] = net_params["mainnet"]["base58_prefixes"]["pubkey_address"]
+        config["network"]["mainnet"]["base58_prefixes"]["script_address"] = net_params["mainnet"]["base58_prefixes"]["script_address"]
+        config["network"]["mainnet"]["base58_prefixes"]["secret_key"] = net_params["mainnet"]["base58_prefixes"]["secret_key"]
+        # Testnet
+        config["network"]["testnet"]["magic_bytes"] = net_params["testnet"]["magic_bytes"]
+        config["network"]["testnet"]["default_port"] = net_params["testnet"]["default_port"]
+        config["network"]["testnet"]["rpc_port"] = net_params["testnet"]["rpc_port"]
+        config["network"]["testnet"]["bip44_coin_type"] = net_params["testnet"]["bip44_coin_type"]
+        if "base58" not in config["network"]["testnet"]:
+            config["network"]["testnet"]["base58"] = {}
+        config["network"]["testnet"]["base58"]["pubkey_address"] = net_params["testnet"]["base58"]["pubkey_address"]
+        config["network"]["testnet"]["base58"]["script_address"] = net_params["testnet"]["base58"]["script_address"]
+        config["network"]["testnet"]["base58"]["secret_key"] = net_params["testnet"]["base58"]["secret_key"]
 
-    print("--- Network (Testnet) ---")
-    config["network"]["testnet"]["magic_bytes"] = [
-        int(x, 0) for x in _prompt_list(
-            "Magic bytes (4 comma-separated hex or decimal)",
-            config["network"]["testnet"]["magic_bytes"]
-        )
-    ]
-    config["network"]["testnet"]["default_port"] = _prompt_int("P2P port", config["network"]["testnet"]["default_port"])
-    config["network"]["testnet"]["rpc_port"] = _prompt_int("RPC port", config["network"]["testnet"]["rpc_port"])
-    config["network"]["testnet"]["dns_seeds"] = _prompt_list("DNS seeds (comma-separated)", config["network"]["testnet"]["dns_seeds"])
+        print(f'  Mainnet magic: [{", ".join(f"0x{b:02x}" for b in config["network"]["mainnet"]["magic_bytes"])}]')
+        print(f'  Mainnet P2P port: {config["network"]["mainnet"]["default_port"]}')
+        print(f'  Mainnet RPC port: {config["network"]["mainnet"]["rpc_port"]}')
+        print(f'  Mainnet BIP44 coin type: {config["network"]["mainnet"]["bip44_coin_type"]}')
+        print(f'  Mainnet base58 pubkey: {config["network"]["mainnet"]["base58_prefixes"]["pubkey_address"]}')
+        print(f'  Testnet magic: [{", ".join(f"0x{b:02x}" for b in config["network"]["testnet"]["magic_bytes"])}]')
+        print(f'  Testnet P2P port: {config["network"]["testnet"]["default_port"]}')
+        print(f'  Testnet RPC port: {config["network"]["testnet"]["rpc_port"]}')
+    else:
+        print("--- Network (Mainnet) ---")
+        config["network"]["mainnet"]["magic_bytes"] = [
+            int(x, 0) for x in _prompt_list(
+                "Magic bytes (4 comma-separated hex or decimal)",
+                config["network"]["mainnet"]["magic_bytes"]
+            )
+        ]
+        config["network"]["mainnet"]["default_port"] = _prompt_int("P2P port", config["network"]["mainnet"]["default_port"])
+        config["network"]["mainnet"]["rpc_port"] = _prompt_int("RPC port", config["network"]["mainnet"]["rpc_port"])
+        config["network"]["mainnet"]["dns_seeds"] = _prompt_list("DNS seeds (comma-separated)", config["network"]["mainnet"]["dns_seeds"])
+        config["network"]["mainnet"]["bip44_coin_type"] = _prompt_int("BIP44 coin type", config["network"]["mainnet"]["bip44_coin_type"])
+        config["network"]["mainnet"]["base58_prefixes"]["pubkey_address"] = _prompt_int("Base58 pubkey address prefix", config["network"]["mainnet"]["base58_prefixes"]["pubkey_address"])
+        config["network"]["mainnet"]["base58_prefixes"]["script_address"] = _prompt_int("Base58 script address prefix", config["network"]["mainnet"]["base58_prefixes"]["script_address"])
+        config["network"]["mainnet"]["base58_prefixes"]["secret_key"] = _prompt_int("Base58 secret key prefix", config["network"]["mainnet"]["base58_prefixes"]["secret_key"])
+        print()
+
+        print("--- Network (Testnet) ---")
+        config["network"]["testnet"]["magic_bytes"] = [
+            int(x, 0) for x in _prompt_list(
+                "Magic bytes (4 comma-separated hex or decimal)",
+                config["network"]["testnet"]["magic_bytes"]
+            )
+        ]
+        config["network"]["testnet"]["default_port"] = _prompt_int("P2P port", config["network"]["testnet"]["default_port"])
+        config["network"]["testnet"]["rpc_port"] = _prompt_int("RPC port", config["network"]["testnet"]["rpc_port"])
+        config["network"]["testnet"]["dns_seeds"] = _prompt_list("DNS seeds (comma-separated)", config["network"]["testnet"]["dns_seeds"])
     print()
 
     # ── Genesis ──────────────────────────────────────────────────────
@@ -476,6 +515,35 @@ def run_launch(repo_root: str, config: dict, old_config: dict = None) -> int:
 
     all_results = []
     errors = []
+
+    # ── Step 0: Auto-generate network params if requested ───────────
+    if options.get("auto_generate_network", False):
+        print("[0/8] Auto-generating network parameters...")
+        net_params = generate_all_network_params(
+            chain_name=chain_name,
+            existing_mainnet=config["network"].get("mainnet", {}),
+            existing_testnet=config["network"].get("testnet", {}),
+        )
+        # Mainnet
+        mn = config["network"]["mainnet"]
+        mn["magic_bytes"] = net_params["mainnet"]["magic_bytes"]
+        mn["default_port"] = net_params["mainnet"]["default_port"]
+        mn["rpc_port"] = net_params["mainnet"]["rpc_port"]
+        mn["bip44_coin_type"] = net_params["mainnet"]["bip44_coin_type"]
+        mn.setdefault("base58_prefixes", {}).update(net_params["mainnet"]["base58_prefixes"])
+        # Testnet
+        tn = config["network"]["testnet"]
+        tn["magic_bytes"] = net_params["testnet"]["magic_bytes"]
+        tn["default_port"] = net_params["testnet"]["default_port"]
+        tn["rpc_port"] = net_params["testnet"]["rpc_port"]
+        tn["bip44_coin_type"] = net_params["testnet"]["bip44_coin_type"]
+        tn.setdefault("base58", {}).update(net_params["testnet"]["base58"])
+
+        print(f'  Mainnet magic: [{", ".join(f"0x{b:02x}" for b in mn["magic_bytes"])}]')
+        print(f'  Mainnet P2P: {mn["default_port"]}, RPC: {mn["rpc_port"]}, BIP44: {mn["bip44_coin_type"]}')
+        print(f'  Testnet magic: [{", ".join(f"0x{b:02x}" for b in tn["magic_bytes"])}]')
+        print(f'  Testnet P2P: {tn["default_port"]}, RPC: {tn["rpc_port"]}')
+        print()
 
     # ── Step 1: Generate keys ────────────────────────────────────────
     keys_cfg = config.get("keys", {})

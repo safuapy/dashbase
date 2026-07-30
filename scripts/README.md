@@ -33,6 +33,14 @@ The tool automates the following categories of customization:
 - Fixed seed nodes (cleared for fresh chain)
 - Data directory paths in `chainparamsbase.cpp`
 
+**Auto-generation:** The tool can automatically generate all network identity values with collision avoidance:
+- **Magic bytes**: 4 random bytes, checked against known chains (Bitcoin, Dash, Litecoin, Dogecoin, Dashbase, etc.)
+- **P2P/RPC ports**: Random ports (10000-65535), RPC = P2P - 1 by convention, avoids known ports
+- **Base58 prefixes**: Random pubkey/script/secret key prefixes, avoids known Bitcoin/Dash/Litecoin prefixes
+- **BIP44 coin type**: Random value in 256-65535 range (above SLIP-44 registered range), avoids known types
+
+Enable in CLI mode with `"auto_generate_network": true` in `chainbrand.json`, or answer "Y" when prompted in the interactive wizard.
+
 **Files patched:** `src/chainparams.cpp`, `src/chainparamsbase.cpp`, `src/chainparamsseeds.h`
 
 ### 3. Genesis Block Mining
@@ -195,6 +203,7 @@ scripts/
   lib/
     __init__.py
     file_patcher.py            # Safe, atomic file patching utilities
+    generate.py                # Auto-generation of magic bytes, ports, base58, BIP44
     branding.py                # Branding & naming patches
     network.py                 # Network identity + genesis/spork patching
     genesis.py                 # Genesis block mining (X11)

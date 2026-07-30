@@ -232,6 +232,7 @@
   },
 
   "options": {
+    "auto_generate_network": false,
     "mine_genesis": false,
     "clear_checkpoints": true,
     "clear_fixed_seeds": true,
