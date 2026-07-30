@@ -30,10 +30,10 @@ export function AppLayout() {
 
   useEffect(() => {
     checkDaemon();
-    refresh();
+    const initialRefresh = setTimeout(refresh, 3000);
     const interval = setInterval(refresh, 15000);
     const daemonInterval = setInterval(checkDaemon, 5000);
-    return () => { clearInterval(interval); clearInterval(daemonInterval); };
+    return () => { clearTimeout(initialRefresh); clearInterval(interval); clearInterval(daemonInterval); };
   }, [refresh, checkDaemon]);
 
   return (

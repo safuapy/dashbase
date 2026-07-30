@@ -158,6 +158,7 @@ shrinkdebuglog=1
 
     let child = Command::new(&daemon_path)
         .arg(format!("-datadir={}", dd.display()))
+        .arg(format!("-conf={}", conf_path.display()))
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()

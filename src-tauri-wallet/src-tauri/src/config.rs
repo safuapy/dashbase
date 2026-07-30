@@ -101,16 +101,20 @@ fn find_conf_file() -> Option<std::path::PathBuf> {
         }
     }
 
+    // Use the same data_dir as daemon.rs to ensure we read the same config
+    // the daemon was started with
+    let conf = crate::daemon::data_dir().join("dashbase.conf");
+    if conf.exists() {
+        return Some(conf);
+    }
+
+    // Fallback to legacy locations
     let home = dirs::home_dir()?;
     let candidates = [
         home.join(".dashbase").join("dashbase.conf"),
         home.join(".dashbase").join("dash.conf"),
         home.join("Library").join("Application Support").join("Dashbase").join("dashbase.conf"),
-        home.join("Library").join("Application Support").join("DashCore").join("dashbase.conf"),
-        home.join("Library").join("Application Support").join("DashCore").join("dash.conf"),
         home.join("AppData").join("Roaming").join("Dashbase").join("dashbase.conf"),
-        home.join("AppData").join("Roaming").join("DashCore").join("dashbase.conf"),
-        home.join("AppData").join("Roaming").join("DashCore").join("dash.conf"),
     ];
 
     for candidate in &candidates {
